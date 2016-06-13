@@ -19,6 +19,15 @@ compiler=$1
 source_file=$2
 runner=$3
 
+OUTPUT="output.txt"
+ERRORS="errors.txt"
+
+# Save stdout and stderr
+exec 3>&1 4>&2
+
+# Redirect stdout and stderr
+exec 1>"$OUTPUT" 2>"$ERRORS"
+
 START_TIME=$(date +%s.%2N)
 
 if [ "$runner" = "" ]; then
@@ -39,4 +48,8 @@ fi
 
 END_TIME=$(date +%s.%2N)
 TOTAL_TIME=$(echo "$END_TIME - $START_TIME" | bc)
+
+# Restore stdout and stderr
+exec 1>&3 2>&4
+
 echo "Script finished in $TOTAL_TIME seconds."
