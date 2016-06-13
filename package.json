@@ -1,0 +1,22 @@
+{
+  "name": "nu-code",
+  "version": "1.0.0",
+  "description": "This is my capstone project.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@gitlab.com/salmonman808/capstone.git"
+  },
+  "author": "Tyler Berry",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://gitlab.com/salmonman808/capstone/issues"
+  },
+  "homepage": "https://gitlab.com/salmonman808/capstone#README",
+  "dependencies": {
+    "express": "^4.13.4"
+  }
+}
