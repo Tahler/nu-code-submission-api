@@ -19,7 +19,7 @@ var PORT = 8080;
  * Otherwise, the JSON response will contain a single field:
  * - "error": A string detailing the error in the request.
  */
-app.get('/compile', function (req, res) {
+app.get('/code', function (req, res) {
   res.send('Hello World!');
 });
 
