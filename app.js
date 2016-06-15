@@ -12,8 +12,8 @@ const PORT = 8080;
  * Details the Web API for compilation.
  *
  * Requests should be sent to this API as a post request containing JSON with two fields:
- * - "lang": A string specifying the language code of the source code. A full list can be found
- *   in another file. // TODO!
+ * - "lang": A string specifying the language code of the source code. A full list can be found in
+ *   the properties of compilers.js.
  * - "src": A string containing all of the source code.
  *
  * Example request using cURL:
@@ -38,16 +38,22 @@ app.post('/code', jsonParser, function (req, res) {
       && req.hasOwnProperty(SRC_PROPERTY);
   }
 
+  function langIsSupported(lang) {
+    return compilers.hasOwnProperty(lang);
+  }
+
   if (reqIsFormattedCorrectly(jsonReq)) {
     const lang = jsonReq[LANGUAGE_CODE_PROPERTY];
     const code = jsonReq[SRC_PROPERTY];
-
-    console.log(lang);
-    console.log(code);
-    console.log(compilers[lang]);
+    if (langIsSupported(lang)) {
+      execute(lang, code);
+    } else {
+      const langUnsupportedErr = '{ "error": "Language ' + lang + ' is unsupported." }\n';
+      res.send(langUnsupportedErr);
+    }
   } else {
-    const BAD_REQUEST_STATUS_CODE = 400;
-    res.sendStatus(BAD_REQUEST_STATUS_CODE);
+    const badRequestErr = '{ "error": "Requests must be sent as JSON containing two fields: \\"lang\\" and \\"src\\"." }\n';
+    res.send(badRequestErr);
   }
 });
 
