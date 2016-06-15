@@ -6,13 +6,13 @@
 #   1. The compiler to compile the source file.
 #		2. The source file to be compiled.
 #		3. The command to execute the object code.
+#	Example Usage:
+#   ./compile.sh gcc file.c ./a.out
 #
 # Interpretation Arguments
 #   1. The interpreter to interpret the source file.
 #		2. The source file to be interpreted.
-#
 #	Example Usage:
-#   ./compile.sh gcc file.c ./a.out
 #   ./compile.sh node file.js
 
 compiler=$1
@@ -22,11 +22,11 @@ runner=$3
 OUTPUT="output.txt"
 ERRORS="errors.txt"
 
-# Save stdout and stderr
-exec 3>&1 4>&2
+# # Save stdout and stderr
+# exec 3>&1 4>&2
 
-# Redirect stdout and stderr
-exec 1>"$OUTPUT" 2>"$ERRORS"
+# # Redirect stdout and stderr
+# exec 1>"$OUTPUT" 2>"$ERRORS"
 
 START_TIME=$(date +%s.%2N)
 
@@ -40,16 +40,16 @@ else
 	if [ $? -eq 0 ]; then
   	# No errors (i.e. last return code was 0)
 		$runner
-	else
-    # Errors
-    echo "Compilation Failed"
+	# else
+  #   # Errors
+  #   echo "Compilation Failed"
 	fi
 fi
 
 END_TIME=$(date +%s.%2N)
 TOTAL_TIME=$(echo "$END_TIME - $START_TIME" | bc)
 
-# Restore stdout and stderr
-exec 1>&3 2>&4
+# # Restore stdout and stderr
+# exec 1>&3 2>&4
 
-echo "Script finished in $TOTAL_TIME seconds."
+# echo "Script finished in $TOTAL_TIME seconds."

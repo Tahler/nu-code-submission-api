@@ -1,0 +1,23 @@
+{
+  "name": "nu-code",
+  "version": "1.0.0",
+  "description": "This is my capstone project.",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@gitlab.com/salmonman808/capstone.git"
+  },
+  "author": "Tyler Berry",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://gitlab.com/salmonman808/capstone/issues"
+  },
+  "homepage": "https://gitlab.com/salmonman808/capstone#README",
+  "dependencies": {
+    "body-parser": "^1.15.1",
+    "express": "^4.13.4"
+  }
+}
