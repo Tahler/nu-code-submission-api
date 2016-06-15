@@ -17,7 +17,7 @@ const PORT = 8080;
  * - "src": A string containing all of the source code.
  *
  * Example request using cURL:
- * curl -d '{"lang": "c", "src": ""}' -H "Content-Type: application/json" http://localhost:8080/code
+ * curl -d '{"lang": "c", "src": "#include <stdio.h>\n\nint main()\n{\n  printf(\"Hello, world!\");\n}"}' -H "Content-Type: application/json" http://localhost:8080/code
  *
  * Responses are sent as JSON.
  * If the request was correctly formatted, then the JSON response will contain two fields:
@@ -56,6 +56,26 @@ app.post('/code', jsonParser, function (req, res) {
     res.send(badRequestErr);
   }
 });
+
+function writeToFile(filename, buffer) {
+  const fs = require('fs');
+  fs.writeFile(filename, buffer); // TODO: errors here?
+}
+
+function execute(lang, code) {
+  const parameters = compilers[lang];
+  const filename = parameters[1];
+  writeToFile(filename, code);
+
+  const exec = require('child_process').exec;
+
+  const cmd = './compile.sh ' + parameters.join(' ');
+  exec(cmd, function (error, stdout, stderr) {
+    console.log('error:' + error);
+    console.log('out:' + stdout);
+    console.log('err:' + stderr);
+  });
+}
 
 app.listen(PORT, function () {
   console.log('Example app listening on port ' + PORT);
