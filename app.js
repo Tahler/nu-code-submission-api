@@ -46,7 +46,14 @@ app.post('/code', jsonParser, function (req, res) {
     const lang = jsonReq[LANGUAGE_CODE_PROPERTY];
     const code = jsonReq[SRC_PROPERTY];
     if (langIsSupported(lang)) {
-      execute(lang, code);
+      execute(lang, code, function (result, err) {
+        if (err) {
+          console.log('UH OH! That should not have happened!');
+        } else {
+          resultJson = JSON.stringify(result);
+          res.send(resultJson);
+        }
+      });
     } else {
       const langUnsupportedErr = '{ "error": "Language ' + lang + ' is unsupported." }\n';
       res.send(langUnsupportedErr);
@@ -57,23 +64,31 @@ app.post('/code', jsonParser, function (req, res) {
   }
 });
 
-function writeToFile(filename, buffer) {
+function writeToFile(filename, buffer, callback) {
   const fs = require('fs');
-  fs.writeFile(filename, buffer); // TODO: errors here?
+  fs.writeFile(filename, buffer, function (err) {
+    callback(err);
+  });
 }
 
-function execute(lang, code) {
+function execute(lang, code, callback) {
   const parameters = compilers[lang];
   const filename = parameters[1];
-  writeToFile(filename, code);
 
-  const exec = require('child_process').exec;
+  writeToFile(filename, code, function (err) {
+    const exec = require('child_process').exec;
 
-  const cmd = './compile.sh ' + parameters.join(' ');
-  exec(cmd, function (error, stdout, stderr) {
-    console.log('error:' + error);
-    console.log('out:' + stdout);
-    console.log('err:' + stderr);
+    const cmd = './compile.sh ' + parameters.join(' ');
+    exec(cmd, function (error, stdout, stderr) {
+      const wasSuccess = stderr == "";
+      const output = wasSuccess ? stdout : stderr;
+      const result = {
+        wasSuccess: wasSuccess,
+        // execTime: execTime,
+        output: output
+      };
+      callback(result, err);
+    });
   });
 }
 
