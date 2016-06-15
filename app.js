@@ -39,10 +39,12 @@ app.post('/code', jsonParser, function (req, res) {
   }
 
   if (reqIsFormattedCorrectly(jsonReq)) {
-    const lang = jsonReq.LANGUAGE_CODE_PROPERTY;
-    const code = jsonReq.SRC_PROPERTY;
+    const lang = jsonReq[LANGUAGE_CODE_PROPERTY];
+    const code = jsonReq[SRC_PROPERTY];
 
-    res.send('Correct\n'); // TODO use the script, then configure running that in docker
+    console.log(lang);
+    console.log(code);
+    console.log(compilers[lang]);
   } else {
     const BAD_REQUEST_STATUS_CODE = 400;
     res.sendStatus(BAD_REQUEST_STATUS_CODE);
