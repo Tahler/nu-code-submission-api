@@ -14,5 +14,5 @@
 exports.compilers = {
     c: ["gcc", "solution.c", "./a.out"],
     java: ["javac", "solution.java", "java solution"],
-    node: ["node", "solution.js", ""]
+    js: ["node", "solution.js", ""]
 }
