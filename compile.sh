@@ -52,4 +52,4 @@ TOTAL_TIME=$(echo "$END_TIME - $START_TIME" | bc)
 # # Restore stdout and stderr
 # exec 1>&3 2>&4
 
-echo "Script finished in $TOTAL_TIME seconds."
+# echo "Script finished in $TOTAL_TIME seconds."
