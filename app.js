@@ -1,12 +1,12 @@
-var express = require('express');
-var app = express();
+const express = require('express');
+const app = express();
 
-var bodyParser = require('body-parser');
-var jsonParser = bodyParser.json();
+const bodyParser = require('body-parser');
+const jsonParser = bodyParser.json();
 
-var compilers = require('./compilers').compilers;
+const compilers = require('./compilers').compilers;
 
-var PORT = 8080;
+const PORT = 8080;
 
 /**
  * Details the Web API for compilation.
@@ -28,12 +28,15 @@ var PORT = 8080;
  * - "error": A string detailing the error in the request.
  */
 app.post('/code', jsonParser, function (req, res) {
-  var jsonReq = req.body;
+  const jsonReq = req.body;
 
   if (jsonReq) {
     if (jsonReq.hasOwnProperty('language')
         && jsonReq.hasOwnProperty('code')) {
-      res.send('API correct\n');
+      const lang = jsonReq.language;
+      const code = jsonReq.code;
+
+      res.send('API correct\n'); // TODO use the script, then configure running that in docker
     }
   } else {
     res.sendStatus(400);
