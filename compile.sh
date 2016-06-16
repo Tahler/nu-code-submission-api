@@ -3,53 +3,88 @@
 # This script compiles / interprets a user's source code.
 #
 # Compilation Arguments
-#   1. The compiler to compile the source file.
-#		2. The source file to be compiled.
-#		3. The command to execute the object code.
+#   1. The number of seconds before timing out.
+#   2. The compiler to compile the source file.
+#		3. The source file to be compiled.
+#		4. The command to execute the object code.
 #	Example Usage:
-#   ./compile.sh gcc file.c ./a.out
+#   ./compile.sh 5 gcc file.c ./a.out
 #
 # Interpretation Arguments
-#   1. The interpreter to interpret the source file.
-#		2. The source file to be interpreted.
+#   1. The number of seconds before timing out.
+#   2. The interpreter to interpret the source file.
+#		3. The source file to be interpreted.
 #	Example Usage:
-#   ./compile.sh node file.js
+#   ./compile.sh 10 node file.js
 
-compiler=$1
-source_file=$2
-runner=$3
+seconds=$1
+compiler=$2
+source_file=$3
+runner=$4
 
-OUTPUT="output.txt"
-ERRORS="errors.txt"
+execute()
+{
+  seconds="$1"
+  shift 1
+  command=$*
 
-# # Save stdout and stderr
-# exec 3>&1 4>&2
+  output=$(timeout "$seconds"s $command)
+  exit_code=$?
 
-# # Redirect stdout and stderr
-# exec 1>"$OUTPUT" 2>"$ERRORS"
+  echo $output
+  return $exit_code
+}
 
-START_TIME=$(date +%s.%2N)
+get_status()
+{
+  exit_code="$1"
+
+  SUCCESS_CODE=0
+  # 124 is the exit code for a timeout
+  TIMEOUT_CODE=124
+
+  case "$exit_code" in
+    $SUCCESS_CODE)
+      echo "Success"
+      ;;
+    $TIMEOUT_CODE)
+      echo "Timeout"
+      ;;
+    *)
+      echo "Error"
+      ;;
+  esac
+}
+
+################################################################################
+# Begin script
+################################################################################
 
 if [ "$runner" = "" ]; then
   # Interpretation
-  $compiler $source_file
+
+  START_TIME=$(date +%s.%2N)
+
+  output=$( (execute "$seconds" "$compiler" "$source_file") 2>&1)
+  exit_code=$?
 else
   # Compilation
-  $compiler $source_file
 
-	if [ $? -eq 0 ]; then
+  output=$( ("$compiler" "$source_file") 2>&1)
+  exit_code=$?
+
+	if [ $exit_code -eq 0 ]; then
   	# No errors (i.e. last return code was 0)
-		$runner
-	# else
-  #   # Errors
-  #   echo "Compilation Failed"
+
+    START_TIME=$(date +%s.%2N)
+
+    output=$(execute "$seconds" "$runner")
+    exit_code=$?
 	fi
 fi
 
 END_TIME=$(date +%s.%2N)
 TOTAL_TIME=$(echo "$END_TIME - $START_TIME" | bc)
+status=$(get_status "$exit_code")
 
-# # Restore stdout and stderr
-# exec 1>&3 2>&4
-
-# echo "Script finished in $TOTAL_TIME seconds."
+echo "{\"status\": \"$status\", \"output\": \"$output\", \"execTime\": $TOTAL_TIME}";
