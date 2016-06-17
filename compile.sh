@@ -45,13 +45,13 @@ get_status()
 
   case "$exit_code" in
     $SUCCESS_CODE)
-      echo "Success"
+      echo "success"
       ;;
     $TIMEOUT_CODE)
-      echo "Timeout"
+      echo "timeout"
       ;;
     *)
-      echo "Error"
+      echo "error"
       ;;
   esac
 }
@@ -63,7 +63,7 @@ get_status()
 if [ "$runner" = "" ]; then
   # Interpretation
 
-  START_TIME=$(date +%s.%2N)
+  start_time=$(date +%s.%2N)
 
   output=$( (execute "$seconds" "$compiler" "$source_file") 2>&1)
   exit_code=$?
@@ -76,15 +76,15 @@ else
 	if [ $exit_code -eq 0 ]; then
   	# No errors (i.e. last return code was 0)
 
-    START_TIME=$(date +%s.%2N)
+    start_time=$(date +%s.%2N)
 
     output=$(execute "$seconds" "$runner")
     exit_code=$?
 	fi
 fi
 
-END_TIME=$(date +%s.%2N)
-TOTAL_TIME=$(echo "$END_TIME - $START_TIME" | bc)
+end_time=$(date +%s.%2N)
+total_time=$(echo "$end_time - $start_time" | bc)
 status=$(get_status "$exit_code")
 
-echo "{\"status\": \"$status\", \"output\": \"$output\", \"execTime\": $TOTAL_TIME}";
+echo "{\"status\": \"$status\", \"output\": \"$output\", \"execTime\": $total_time}";
