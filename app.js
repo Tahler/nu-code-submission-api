@@ -4,7 +4,7 @@ const app = express();
 const bodyParser = require('body-parser');
 const jsonParser = bodyParser.json();
 
-const compilers = require('./compilers').compilers;
+const compilers = require('./supported-compilers');
 
 const PORT = 8080;
 

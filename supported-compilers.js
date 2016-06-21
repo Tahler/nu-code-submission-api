@@ -11,8 +11,19 @@
  *   compiled program.
  */
 
-exports.compilers = {
-    c: ["gcc", "solution.c", "./a.out"],
-    java: ["javac", "solution.java", "java solution"],
-    js: ["node", "solution.js", ""]
+module.exports = {
+  c: {
+    compiler: "gcc",
+    fileName: "solution.c",
+    runtime: "./a.out"
+  },
+  java: {
+    compiler: "javac",
+    fileName: "Solution.java",
+    runtime: "java Solution"
+  },
+  js: {
+    compiler: "node",
+    fileName: "solution.js"
+  }
 }
