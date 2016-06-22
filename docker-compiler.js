@@ -1,16 +1,16 @@
 // npm
-const fs = require('fs');
-const exec = require('child_process').exec;
+var fs = require('fs');
+var exec = require('child_process').exec;
 
 // custom packages
-const compilers = require('./supported-compilers');
+var compilers = require('./supported-compilers');
 
 // constants
-const COPY_DIR = 'user-files';
-const CONTAINER_USER_DIR = '/user-files';
-const INPUT_FILE_NAME = 'input.txt';
-const COMPILE_SCRIPT_NAME = 'compile.sh';
-const DOCKER_CONTAINER_NAME = 'compiler';
+var COPY_DIR = 'user-files';
+var CONTAINER_USER_DIR = '/user-files';
+var INPUT_FILE_NAME = 'input.txt';
+var COMPILE_SCRIPT_NAME = 'compile.sh';
+var DOCKER_CONTAINER_NAME = 'compiler';
 
 function UnsupportedLanguageException(lang) {
   this.name = 'UnsupportedLanguageException';
@@ -20,15 +20,15 @@ function UnsupportedLanguageException(lang) {
 /**
  * Constructor
  */
-const DockerCompiler = function (lang, code, seconds, stdin, workingDir) {
-  if (langIsSupported(lang)) {
+var DockerCompiler = function (lang, code, stdin, seconds, workingDir) {
+  if (compilers.hasOwnProperty(lang)) {
     this.lang = lang;
     this.code = code;
     this.seconds = seconds;
 
     this.workingDir = workingDir;
 
-    const params = compilers[lang];
+    var params = compilers[lang];
     this.compiler = params.compiler || '';
     this.filename = params.filename || '';
     this.runtime = params.runtime || '';
@@ -45,9 +45,10 @@ const DockerCompiler = function (lang, code, seconds, stdin, workingDir) {
 DockerCompiler.prototype.createFiles = function (callback) {
   // TODO: address errors
   // TODO: try to allow async, everything needs to be done before running, however
+  var dockerCompiler = this;
 
   // Create the folder with copied contents
-  let cmd = `cp ${COPY_DIR} ${this.workingDir} -r`;
+  var cmd = `cp ${COPY_DIR} ${this.workingDir} -r`;
   exec(cmd, function (err) {
     // Write the source code to a file in the working directory
     fs.writeFile(
@@ -70,7 +71,7 @@ DockerCompiler.prototype.createFiles = function (callback) {
  * Requires the necessary files to have been created beforehand.
  */
 DockerCompiler.prototype.execute = function (callback) {
-  let cmd = `docker run ${DOCKER_CONTAINER_NAME}`
+  var cmd = `docker run ${DOCKER_CONTAINER_NAME}`
     // volume to run in
     + ` -v ${this.workingDir}:${CONTAINER_USER_DIR}`
     // command to run inside docker container
@@ -78,22 +79,23 @@ DockerCompiler.prototype.execute = function (callback) {
     // parameters for command
     + ` ${this.seconds}s ${this.compiler} ${this.filename} ${this.runtime}`;
   exec(cmd, function (err, stdout, stderr) {
+    console.log(stdout);
     callback(stdout);
   });
 };
 
 DockerCompiler.prototype.cleanup = function (callback) {
-  let cmdRemoveWorkingDir = `rm ${workingDir} -rf`;
-  exec(cmdRemoveWorkingDir);
+  var cmdRemoveWorkingDir = `rm ${this.workingDir} -rf`;
+  // exec(cmdRemoveWorkingDir);
 
-  let cmdRemoveExitedContainers = `docker ps -a | grep Exit | cut -d ' ' -f 1 | xargs docker rm`;
+  var cmdRemoveExitedContainers = `docker ps -a | grep Exit | cut -d ' ' -f 1 | xargs docker rm`;
   exec(cmdRemoveExitedContainers);
 };
 
 DockerCompiler.prototype.run = function (callback) {
-  const dockerCompiler = this;
-  createFiles(function () {
-    execute(function (stdout) {
+  var dockerCompiler = this;
+  dockerCompiler.createFiles(function () {
+    dockerCompiler.execute(function (stdout) {
       callback(stdout);
       dockerCompiler.cleanup();
     });
