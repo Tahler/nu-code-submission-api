@@ -20,7 +20,7 @@ function UnsupportedLanguageException(lang) {
 /**
  * Constructor
  */
-const DockerCompiler = function (lang, code, seconds, workingDir, stdin) {
+const DockerCompiler = function (lang, code, seconds, stdin, workingDir) {
   if (langIsSupported(lang)) {
     this.lang = lang;
     this.code = code;
