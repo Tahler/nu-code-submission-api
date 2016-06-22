@@ -81,8 +81,7 @@ DockerCompiler.prototype.execute = function (callback) {
     // command to run inside docker container
     + ` ./${COMPILE_SCRIPT_NAME}`
     // parameters for command
-    + ` ${this.seconds} ${this.compiler} ${this.filename} ${this.runtime}`;
-    // TODO: include stdin, needs changing in the script to do the redirection
+    + ` ${this.seconds} ${this.compiler} ${this.filename} ${INPUT_FILE_NAME} ${this.runtime}`;
   exec(cmd, function (err, stdout, stderr) {
     callback(stdout);
   });

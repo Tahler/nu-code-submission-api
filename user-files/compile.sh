@@ -6,21 +6,24 @@
 #   1. The number of seconds before timing out.
 #   2. The compiler to compile the source file.
 #		3. The source file to be compiled.
-#		4. The command to execute the object code.
+#		4. The input file to be redirected as stdin.
+#		5. The command to execute the object code.
 #	Example Usage:
-#   ./compile.sh 5 gcc file.c ./a.out
+#   ./compile.sh 5 gcc file.c input.txt ./a.out
 #
 # Interpretation Arguments
 #   1. The number of seconds before timing out.
 #   2. The interpreter to interpret the source file.
 #		3. The source file to be interpreted.
+#		4. The input file to be redirected as stdin.
 #	Example Usage:
-#   ./compile.sh 10 node file.js
+#   ./compile.sh 10 node file.js input.txt
 
 seconds=$1
 compiler=$2
 source_file=$3
-runner=$4
+input_file=$4
+runner=$5
 
 execute()
 {
@@ -28,8 +31,8 @@ execute()
   shift 1
   command=$*
 
-  output=$(timeout "$seconds"s $command)
-  exit_code=$?
+  output=$(timeout "$seconds"s cat "$input_file" | $command)
+  exit_code=${PIPESTATUS[0]}
 
   echo $output
   return $exit_code
@@ -65,11 +68,13 @@ if [ "$runner" = "" ]; then
 
   start_time=$(date +%s.%2N)
 
-  output=$( (execute "$seconds" "$compiler" "$source_file") 2>&1)
+  # Redirect runtime errors to stdout
+  output=$( (execute "$seconds" "$compiler" "$source_file" 2>&1))
   exit_code=$?
 else
   # Compilation
 
+  # Redirect compilation errors to stdout
   output=$( ("$compiler" "$source_file") 2>&1)
   exit_code=$?
 
