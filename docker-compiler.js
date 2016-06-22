@@ -8,9 +8,9 @@ var compilers = require('./supported-compilers');
 // constants
 var COPY_DIR = 'user-files';
 var CONTAINER_USER_DIR = '/user-files';
-var INPUT_FILE_NAME = 'input.txt';
 var COMPILE_SCRIPT_NAME = 'compile.sh';
-var DOCKER_CONTAINER_NAME = 'compiler';
+var INPUT_FILE_NAME = 'input.txt';
+var DOCKER_IMAGE = 'compiler';
 
 function UnsupportedLanguageException(lang) {
   this.name = 'UnsupportedLanguageException';
@@ -71,22 +71,26 @@ DockerCompiler.prototype.createFiles = function (callback) {
  * Requires the necessary files to have been created beforehand.
  */
 DockerCompiler.prototype.execute = function (callback) {
-  var cmd = `docker run ${DOCKER_CONTAINER_NAME}`
+  var cmd = `docker run`
     // volume to run in
-    + ` -v ${this.workingDir}:${CONTAINER_USER_DIR}`
+    // TODO: fix this pwd crap?
+    + ` -v "\`pwd\`/${this.workingDir}":${CONTAINER_USER_DIR}`
+    + ` -w ${CONTAINER_USER_DIR}`
+    // the image to run
+    + ` ${DOCKER_IMAGE}`
     // command to run inside docker container
-    + ` ${CONTAINER_USER_DIR}/${COMPILE_SCRIPT_NAME}`
+    + ` ./${COMPILE_SCRIPT_NAME}`
     // parameters for command
-    + ` ${this.seconds}s ${this.compiler} ${this.filename} ${this.runtime}`;
+    + ` ${this.seconds} ${this.compiler} ${this.filename} ${this.runtime}`;
+    // TODO: include stdin, needs changing in the script to do the redirection
   exec(cmd, function (err, stdout, stderr) {
-    console.log(stdout);
     callback(stdout);
   });
 };
 
 DockerCompiler.prototype.cleanup = function (callback) {
   var cmdRemoveWorkingDir = `rm ${this.workingDir} -rf`;
-  // exec(cmdRemoveWorkingDir);
+  exec(cmdRemoveWorkingDir);
 
   var cmdRemoveExitedContainers = `docker ps -a | grep Exit | cut -d ' ' -f 1 | xargs docker rm`;
   exec(cmdRemoveExitedContainers);
