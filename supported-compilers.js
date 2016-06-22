@@ -14,16 +14,16 @@
 module.exports = {
   c: {
     compiler: "gcc",
-    fileName: "solution.c",
+    filename: "solution.c",
     runtime: "./a.out"
   },
   java: {
     compiler: "javac",
-    fileName: "Solution.java",
+    filename: "Solution.java",
     runtime: "java Solution"
   },
   js: {
     compiler: "node",
-    fileName: "solution.js"
+    filename: "solution.js"
   }
 }
