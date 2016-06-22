@@ -23,7 +23,7 @@ module.exports = {
     runtime: "java Solution"
   },
   js: {
-    compiler: "node",
+    compiler: "nodejs",
     filename: "solution.js"
   }
 }
