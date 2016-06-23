@@ -72,16 +72,17 @@ DockerCompiler.prototype.createFiles = function (callback) {
  */
 DockerCompiler.prototype.execute = function (callback) {
   var cmd = `docker run`
-    // volume to run in
-    // TODO: fix this pwd crap?
-    + ` -v "\`pwd\`/${this.workingDir}":${CONTAINER_USER_DIR}`
-    + ` -w ${CONTAINER_USER_DIR}`
-    // the image to run
-    + ` ${DOCKER_IMAGE}`
-    // command to run inside docker container
-    + ` ./${COMPILE_SCRIPT_NAME}`
-    // parameters for command
-    + ` ${this.seconds} ${this.compiler} ${this.filename} ${INPUT_FILE_NAME} ${this.runtime}`;
+      // volume to run in
+      // TODO: fix this pwd crap?
+      + ` -v "\`pwd\`/${this.workingDir}":${CONTAINER_USER_DIR}`
+      + ` -w ${CONTAINER_USER_DIR}`
+      // the image to run
+      + ` ${DOCKER_IMAGE}`
+      // command to run inside docker container
+      + ` ./${COMPILE_SCRIPT_NAME}`
+      // parameters for command
+      + ` "${this.seconds}" "${this.compiler}" "${this.filename}" "${INPUT_FILE_NAME}"`
+      + ` "${this.runtime}"`;
   exec(cmd, function (err, stdout, stderr) {
     callback(stdout);
   });
