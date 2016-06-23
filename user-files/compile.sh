@@ -31,7 +31,7 @@ execute()
   shift 1
   command=$*
 
-  output=$(timeout "$seconds"s cat "$input_file" | $command)
+  output=$(cat "$input_file" | timeout "$seconds"s $command)
   exit_code=${PIPESTATUS[0]}
 
   echo $output
