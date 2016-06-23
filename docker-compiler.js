@@ -20,7 +20,7 @@ function UnsupportedLanguageException(lang) {
 /**
  * Constructor
  */
-var DockerCompiler = function (lang, code, stdin, seconds, workingDir) {
+var DockerCompiler = function (lang, code, input, seconds, workingDir) {
   if (compilers.hasOwnProperty(lang)) {
     this.lang = lang;
     this.code = code;
@@ -33,7 +33,7 @@ var DockerCompiler = function (lang, code, stdin, seconds, workingDir) {
     this.filename = params.filename || '';
     this.runtime = params.runtime || '';
 
-    this.stdin = stdin;
+    this.input = input;
   } else {
     throw new UnsupportedLanguageException(lang);
   }
@@ -55,10 +55,10 @@ DockerCompiler.prototype.createFiles = function (callback) {
         `${dockerCompiler.workingDir}/${dockerCompiler.filename}`,
         dockerCompiler.code,
         function (err) {
-      // Write the stdin to a file in the working directory
+      // Write the input to a file in the working directory
       fs.writeFile(
           `${dockerCompiler.workingDir}/${INPUT_FILE_NAME}`,
-          dockerCompiler.stdin,
+          dockerCompiler.input,
           function(err) {
         // Allow the chain to continue via the callback function
         callback();

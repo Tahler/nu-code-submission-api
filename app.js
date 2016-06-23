@@ -12,7 +12,7 @@ var PORT = 8080;
 var LANG_PROPERTY = 'lang';
 var SRC_PROPERTY = 'src';
 var TIMEOUT_PROPERTY = 'seconds';
-var STDIN_PROPERTY = 'stdin';
+var INPUT_PROPERTY = 'input';
 var REQUIRED_PROPERTIES = [LANG_PROPERTY, SRC_PROPERTY];
 var BAD_REQUEST_ERR = (function () {
   var requiredPropertiesLength = REQUIRED_PROPERTIES.length;
@@ -36,7 +36,7 @@ var BAD_REQUEST_ERR = (function () {
     + `${propertyOrProperties}: ${list}."`;
 })();
 var DEFAULT_TIMEOUT_SECONDS = 600;
-var DEFAULT_STDIN = '';
+var DEFAULT_INPUT = '';
 
 // The dir count is appended to this
 var WORKING_DIR_PREFIX = 'user-files';
@@ -56,7 +56,7 @@ var dirCount = 0;
  * The next two fields are optional, and will be defaulted if not specified directly:
  * - "seconds": A number specifying the amount of seconds before a timeout is reported. The default
  *   is 10 minutes (600 seconds).
- * - "stdin": A string containing all of the input to be directed into the program.
+ * - "input": A string containing all of the input to be directed into the program.
  *
  * Example request using cURL:
  * curl -d '{"lang": "c", "src": "#include <stdio.h>\n\nint main()\n{\n  printf(\"Hello, world!\");\n}"}' -H "Content-Type: application/json" http://localhost:8080/api
@@ -80,7 +80,7 @@ app.post('/api', jsonParser, function (req, res) {
     var code = jsonReq[SRC_PROPERTY];
 
     var seconds = jsonReq[TIMEOUT_PROPERTY] || DEFAULT_TIMEOUT_SECONDS;
-    var stdin = jsonReq[STDIN_PROPERTY] || DEFAULT_STDIN;
+    var input = jsonReq[INPUT_PROPERTY] || DEFAULT_INPUT;
 
     if (seconds > 0) {
       try {
@@ -92,7 +92,7 @@ app.post('/api', jsonParser, function (req, res) {
         }
         var workingDir = WORKING_DIR_PREFIX + String(currentUserNumber);
 
-        var dockerCompiler = new DockerCompiler(lang, code, stdin, seconds, workingDir);
+        var dockerCompiler = new DockerCompiler(lang, code, input, seconds, workingDir);
         dockerCompiler.run(function (stdout) {
           res.send(stdout);
         });
