@@ -35,7 +35,7 @@ var BAD_REQUEST_ERR = (function () {
   return `Requests must be sent as JSON containing at least ${requiredPropertiesLength} `
     + `${propertyOrProperties}: ${list}."`;
 })();
-var DEFAULT_TIMEOUT_SECONDS = 600;
+var DEFAULT_TIMEOUT_SECONDS = 10;
 var DEFAULT_INPUT = '';
 
 // The dir count is appended to this
