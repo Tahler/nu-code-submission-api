@@ -33,7 +33,7 @@ var BAD_REQUEST_ERR = (function () {
   }
 
   return `Requests must be sent as JSON containing at least ${requiredPropertiesLength} `
-    + `${propertyOrProperties}: ${list}."`;
+    + `${propertyOrProperties}: ${list}.`;
 })();
 var DEFAULT_TIMEOUT_SECONDS = 10;
 var DEFAULT_INPUT = '';
@@ -73,6 +73,7 @@ var dirCount = 0;
  * - "error": A string detailing the error in the request.
  */
 app.post('/api', jsonParser, function (req, res) {
+  console.log('received');
   var jsonReq = req.body;
 
   if (hasRequiredProperties(jsonReq, REQUIRED_PROPERTIES)) {
@@ -106,7 +107,7 @@ app.post('/api', jsonParser, function (req, res) {
     }
   } else {
     var badRequestErr = `{"error": "${BAD_REQUEST_ERR}"}\n`;
-    res.send();
+    res.send(badRequestErr);
   }
 });
 
