@@ -24,7 +24,9 @@ var BAD_REQUEST_ERR = (function () {
   } else {
     // assume greater than 1
     for (var i = 0; i < requiredPropertiesLength; i++) {
-      list += ', ';
+      if (i > 0) {
+        list += ', ';
+      }
       if (i == requiredPropertiesLength - 1) {
         list += 'and '
       }
