@@ -71,7 +71,7 @@ DockerCompiler.prototype.createFiles = function (callback) {
  * Requires the necessary files to have been created beforehand.
  */
 DockerCompiler.prototype.execute = function (callback) {
-  var cmd = `docker run`
+  var cmd = `docker run --rm`
       // volume to run in
       // TODO: fix this pwd crap?
       + ` -v "\`pwd\`/${this.workingDir}":${CONTAINER_USER_DIR}`
@@ -92,8 +92,9 @@ DockerCompiler.prototype.cleanup = function (callback) {
   var cmdRemoveWorkingDir = `rm ${this.workingDir} -rf`;
   exec(cmdRemoveWorkingDir);
 
-  var cmdRemoveExitedContainers = `docker ps -a | grep Exit | cut -d ' ' -f 1 | xargs docker rm`;
-  exec(cmdRemoveExitedContainers);
+  // // Already removed via the docker run --rm
+  // var cmdRemoveExitedContainers = `docker ps -a | grep Exit | cut -d ' ' -f 1 | xargs docker rm`;
+  // exec(cmdRemoveExitedContainers);
 };
 
 DockerCompiler.prototype.run = function (callback) {
