@@ -1,11 +1,22 @@
-FROM node:4.4.6
+FROM ubuntu:14.04
 
 MAINTAINER Tyler Berry
 
+RUN apt-get update
+
+# Install Nodejs
+RUN apt-get install -y curl
+RUN curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
+RUN apt-get install -y nodejs
+
+# Install Docker
+# docker.io is used rather than the docker-engine because it starts the docker service automatically
+RUN apt-get install -y docker.io
+
+# Copy and install the necessary web files
 COPY . /var/www
-
 WORKDIR /var/www
-
 RUN npm install
 
-CMD npm start
+# Startup command
+ENTRYPOINT npm start
