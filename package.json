@@ -18,6 +18,7 @@
   "homepage": "https://gitlab.com/salmonman808/capstone#README",
   "dependencies": {
     "body-parser": "^1.15.1",
-    "express": "^4.13.4"
+    "express": "^4.13.4",
+    "tmp": "0.0.28"
   }
 }
