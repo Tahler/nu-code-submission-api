@@ -14,7 +14,8 @@ var SRC_PROPERTY = 'src';
 var TIMEOUT_PROPERTY = 'seconds';
 var INPUT_PROPERTY = 'input';
 var REQUIRED_PROPERTIES = [LANG_PROPERTY, SRC_PROPERTY];
-var BAD_REQUEST_ERR = (function () {
+var BAD_REQUEST_ERR;
+(function () {
   var requiredPropertiesLength = REQUIRED_PROPERTIES.length;
   var propertyOrProperties = requiredPropertiesLength == 1 ? 'property' : 'properties';
 
@@ -34,7 +35,7 @@ var BAD_REQUEST_ERR = (function () {
     }
   }
 
-  return `Requests must be sent as JSON containing at least ${requiredPropertiesLength} `
+  BAD_REQUEST_ERR = `Requests must be sent as JSON containing at least ${requiredPropertiesLength} `
     + `${propertyOrProperties}: ${list}.`;
 })();
 var DEFAULT_TIMEOUT_SECONDS = 10;
