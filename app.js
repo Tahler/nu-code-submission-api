@@ -41,13 +41,6 @@ var BAD_REQUEST_ERR;
 var DEFAULT_TIMEOUT_SECONDS = 10;
 var DEFAULT_INPUT = '';
 
-// The dir count is appended to this
-var WORKING_DIR_PREFIX = 'user-files';
-var MAX_DIR_COUNT = 1000;
-
-// Incremented with each compilation request
-var dirCount = 0;
-
 /**
  * Details the Web API for compilation.
  *
@@ -76,7 +69,6 @@ var dirCount = 0;
  * - "error": A string detailing the error in the request.
  */
 app.post('/api', jsonParser, function (req, res) {
-  console.log('received');
   var jsonReq = req.body;
 
   if (hasRequiredProperties(jsonReq, REQUIRED_PROPERTIES)) {
@@ -88,15 +80,7 @@ app.post('/api', jsonParser, function (req, res) {
 
     if (seconds > 0) {
       try {
-        // Create unique folder for user
-        var currentUserNumber = dirCount;
-        dirCount += 1;
-        if (dirCount > MAX_DIR_COUNT) {
-          dirCount = 0;
-        }
-        var workingDir = WORKING_DIR_PREFIX + String(currentUserNumber);
-
-        var dockerCompiler = new DockerCompiler(lang, code, input, seconds, workingDir);
+        var dockerCompiler = new DockerCompiler(lang, code, input, seconds);
         dockerCompiler.run(function (stdout) {
           res.send(stdout);
         });

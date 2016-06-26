@@ -1,32 +1,22 @@
 // npm
 var fs = require('fs');
-var exec = require('child_process').exec;
+var child_process = require('child_process');
+var exec = child_process.exec;
 
 // custom packages
 var compilers = require('./supported-compilers');
 
 // constants
-var COPY_DIR = 'user-files';
+var DOCKER_IMAGE = 'compiler';
 var CONTAINER_USER_DIR = '/user-files';
 var COMPILE_SCRIPT_NAME = 'compile.sh';
 var INPUT_FILE_NAME = 'input.txt';
-var DOCKER_IMAGE = 'compiler';
 
-function UnsupportedLanguageException(lang) {
-  this.name = 'UnsupportedLanguageException';
-  this.message = `The language ${lang} is not supported.`;
-}
-
-/**
- * Constructor
- */
-var DockerCompiler = function (lang, code, input, seconds, workingDir) {
+var DockerCompiler = function (lang, code, input, seconds) {
   if (compilers.hasOwnProperty(lang)) {
     this.lang = lang;
     this.code = code;
     this.seconds = seconds;
-
-    this.workingDir = workingDir;
 
     var params = compilers[lang];
     this.compiler = params.compiler || '';
@@ -39,72 +29,193 @@ var DockerCompiler = function (lang, code, input, seconds, workingDir) {
   }
 };
 
-/**
- * Creates the necessary files for execution.
- */
-DockerCompiler.prototype.createFiles = function (callback) {
-  // TODO: address errors
-  // TODO: try to allow async, everything needs to be done before running, however
+DockerCompiler.prototype.run = function (callback) {
   var dockerCompiler = this;
-
-  // Create the folder with copied contents
-  var cmd = `cp ${COPY_DIR} ${this.workingDir} -r`;
-  exec(cmd, function (err) {
-    // Write the source code to a file in the working directory
-    fs.writeFile(
-        `${dockerCompiler.workingDir}/${dockerCompiler.filename}`,
-        dockerCompiler.code,
-        function (err) {
-      // Write the input to a file in the working directory
-      fs.writeFile(
-          `${dockerCompiler.workingDir}/${INPUT_FILE_NAME}`,
-          dockerCompiler.input,
-          function(err) {
-        // Allow the chain to continue via the callback function
-        callback();
+  // Create the container
+  createContainer(function (containerId) {
+    // Copy all the files needed later
+    createNeededFilesInContainer(dockerCompiler, containerId, function (err) {
+      execute(dockerCompiler, containerId, function (stdout) {
+        // Command successful, callback
+        callback(stdout);
+        // Cleanup the container
+        cleanup(containerId, function (err) {
+          if (err) {
+            console.log('error cleaning up:\n' + err);
+          }
+        });
       });
     });
   });
 };
 
+module.exports = DockerCompiler;
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function UnsupportedLanguageException(lang) {
+  this.name = 'UnsupportedLanguageException';
+  this.message = `The language ${lang} is not supported.`;
+}
+
 /**
- * Requires the necessary files to have been created beforehand.
+ * Callback called as `callback(generatedContainerId)`
  */
-DockerCompiler.prototype.execute = function (callback) {
-  var cmd = `docker run --rm`
-      // volume to run in
-      // TODO: fix this pwd crap?
-      + ` -v "\`pwd\`/${this.workingDir}":${CONTAINER_USER_DIR}`
-      + ` -w ${CONTAINER_USER_DIR}`
-      // the image to run
-      + ` ${DOCKER_IMAGE}`
-      // command to run inside docker container
-      + ` ./${COMPILE_SCRIPT_NAME}`
-      // parameters for command
-      + ` "${this.seconds}" "${this.compiler}" "${this.filename}" "${INPUT_FILE_NAME}"`
-      + ` "${this.runtime}"`;
-  exec(cmd, function (err, stdout, stderr) {
+function createContainer(callback) {
+  exec(`docker create -i ${DOCKER_IMAGE}`, function (err, stdout) {
+    if (err) {
+      console.log('error creating container:\n' + err);
+    } else {
+      // stdout likes to put \n at the end. take it away via `substring`
+      var containerId = stdout.substring(0, stdout.length - 1);
+      exec(`docker start ${containerId}`, function (err) {
+        if (err) {
+          console.log('error starting container:\n' + err);
+        }
+        callback(containerId);
+      });
+    }
+  });
+}
+
+/**
+ * Calls back as `callback(err)`
+ */
+function createNeededFilesInContainer(dockerCompiler, containerId, callback) {
+  var scriptWritten = false;
+  var sourceWritten = false;
+  var inputWritten = false;
+
+  mkdirInContainer(CONTAINER_USER_DIR, containerId, function (err) {
+    // Copy the script file
+    copyFileToContainer(COMPILE_SCRIPT_NAME, containerId,
+        `${CONTAINER_USER_DIR}/${COMPILE_SCRIPT_NAME}`, function (err) {
+      if (err) {
+        done(err);
+      } else {
+        // Make the script file executable
+        makeFileExecutableInContainer(`${CONTAINER_USER_DIR}/${COMPILE_SCRIPT_NAME}`, containerId,
+            function (err) {
+          if (!err) {
+            scriptWritten = true;
+          }
+          done(err);
+        });
+      }
+    });
+
+    // Write the source file
+    writeFileToContainer(dockerCompiler.code, containerId,
+        `${CONTAINER_USER_DIR}/${dockerCompiler.filename}`, function (err) {
+      if (!err) {
+        sourceWritten = true;
+      }
+      done(err);
+    });
+
+    // Write the input file
+    writeFileToContainer(dockerCompiler.input, containerId,
+        `${CONTAINER_USER_DIR}/${INPUT_FILE_NAME}`, function (err) {
+      if (!err) {
+        inputWritten = true;
+      }
+      done(err);
+    });
+
+    // Once all the steps are done or an error occurs, notify via the callback
+    function done(err) {
+      if (err) {
+        callback(err);
+      } else if (scriptWritten && sourceWritten && inputWritten) {
+        callback();
+      }
+    };
+  });
+};
+
+/**
+ * Calls back as `callback(err)`
+ */
+function execute(dockerCompiler, containerId, callback) {
+  // Run the compiler and runtime inside the container
+  var cmd = `docker exec ${containerId} bash -c`
+      + ` 'cd ${CONTAINER_USER_DIR}`
+      + ` && ./${COMPILE_SCRIPT_NAME}`
+      + ` ${dockerCompiler.seconds}`
+      + ` ${dockerCompiler.compiler} ${dockerCompiler.filename}`
+      + ` ${INPUT_FILE_NAME} ${dockerCompiler.runtime}'`;
+  exec(cmd, function (err, stdout) {
+    if (err) {
+      console.log('error executing command:\n' + err);
+    }
     callback(stdout);
   });
 };
 
-DockerCompiler.prototype.cleanup = function (callback) {
-  var cmdRemoveWorkingDir = `rm ${this.workingDir} -rf`;
-  exec(cmdRemoveWorkingDir);
-
-  // // Already removed via the docker run --rm
-  // var cmdRemoveExitedContainers = `docker ps -a | grep Exit | cut -d ' ' -f 1 | xargs docker rm`;
-  // exec(cmdRemoveExitedContainers);
-};
-
-DockerCompiler.prototype.run = function (callback) {
-  var dockerCompiler = this;
-  dockerCompiler.createFiles(function () {
-    dockerCompiler.execute(function (stdout) {
-      callback(stdout);
-      dockerCompiler.cleanup();
-    });
+/**
+ * Calls back as `callback(err)`
+ */
+function cleanup(containerId, callback) {
+  // Kill the container
+  exec(`docker kill ${containerId}`, function (err) {
+    if (err) {
+      callback(err);
+    } else {
+      // Remove the container
+      exec(`docker rm ${containerId}`, function (err) {
+        callback(err);
+      });
+    }
   });
 };
 
-module.exports = DockerCompiler;
+/**
+ * Callback same as exec
+ */
+function mkdirInContainer(dirName, containerId, callback) {
+  exec(`docker exec ${containerId} mkdir -p ${dirName}`, callback);
+}
+
+/**
+ * Callback same as exec
+ */
+function copyFileToContainer(srcPath, containerId, destPath, callback) {
+  exec(`cat ${srcPath} | docker exec -i ${containerId} sh -c 'cat > ${destPath}'`, callback);
+}
+
+/**
+ * Callback called as `callback(err)`
+ */
+function writeFileToContainer(data, containerId, destPath, callback) {
+  // This is actually impossible (or at least too complicated) because of needed escaping.
+  // The alternative: create an intermediate file, call copyFileToContainer, remove the file
+  var tmp = require('tmp');
+  // Create the tmp filename
+  tmp.tmpName(function (err, path) {
+    if (err) {
+      callback(err);
+    } else {
+      // Write the data to the tmp file
+      fs.writeFile(path, data, function (err) {
+        if (err) {
+          callback(err);
+        } else {
+          // Copy the tmp file to a file on the container
+          copyFileToContainer(path, containerId, destPath, function (err) {
+            // Inform the caller that the data has been sent.
+            callback(err);
+            // Delete the file
+            fs.unlink(path);
+          });
+        }
+      });
+    }
+  });
+}
+
+/**
+ * Callback called as `callback(err)`
+ */
+function makeFileExecutableInContainer(path, containerId, callback) {
+  exec(`docker exec ${containerId} chmod a+rwx ${path}`, callback);
+}
