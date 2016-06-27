@@ -32,7 +32,7 @@ var DockerCompiler = function (lang, code, input, seconds) {
 DockerCompiler.prototype.run = function (callback) {
   var dockerCompiler = this;
   // Create the container
-  createContainer(function (containerId) {
+  startContainer(function (containerId) {
     // Copy all the files needed later
     createNeededFilesInContainer(dockerCompiler, containerId, function (err) {
       execute(dockerCompiler, containerId, function (stdout) {
@@ -61,19 +61,14 @@ function UnsupportedLanguageException(lang) {
 /**
  * Callback called as `callback(generatedContainerId)`
  */
-function createContainer(callback) {
-  exec(`docker create -i ${DOCKER_IMAGE}`, function (err, stdout) {
+function startContainer(callback) {
+  exec(`docker run -d -i ${DOCKER_IMAGE}`, function (err, stdout) {
     if (err) {
-      console.log('error creating container:\n' + err);
+      console.log(err);
     } else {
       // stdout likes to put \n at the end. take it away via `substring`
       var containerId = stdout.substring(0, stdout.length - 1);
-      exec(`docker start ${containerId}`, function (err) {
-        if (err) {
-          console.log('error starting container:\n' + err);
-        }
-        callback(containerId);
-      });
+      callback(containerId);
     }
   });
 }
