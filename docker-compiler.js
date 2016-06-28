@@ -2,6 +2,7 @@
 var fs = require('fs');
 var child_process = require('child_process');
 var exec = child_process.exec;
+var spawn = child_process.spawn;
 
 // custom packages
 var compilers = require('./supported-compilers');
@@ -35,16 +36,20 @@ DockerCompiler.prototype.run = function (callback) {
   startContainer(function (containerId) {
     // Copy all the files needed later
     createNeededFilesInContainer(dockerCompiler, containerId, function (err) {
-      execute(dockerCompiler, containerId, function (stdout) {
-        // Command successful, callback
-        callback(stdout);
-        // Cleanup the container
-        cleanup(containerId, function (err) {
-          if (err) {
-            console.log('error cleaning up:\n' + err);
-          }
+      if (err) {
+        console.log('error copying files to container:\n' + err);
+      } else {
+        execute(dockerCompiler, containerId, function (stdout) {
+          // Command successful, callback
+          callback(stdout);
+          // Cleanup the container
+          cleanup(containerId, function (err) {
+            if (err) {
+              console.log('error cleaning up:\n' + err);
+            }
+          });
         });
-      });
+      }
     });
   });
 };
@@ -64,7 +69,7 @@ function UnsupportedLanguageException(lang) {
 function startContainer(callback) {
   exec(`docker run -d -i ${DOCKER_IMAGE}`, function (err, stdout) {
     if (err) {
-      console.log(err);
+      console.log('error starting image ' + err);
     } else {
       // stdout likes to put \n at the end. take it away via `substring`
       var containerId = stdout.substring(0, stdout.length - 1);
@@ -129,21 +134,40 @@ function createNeededFilesInContainer(dockerCompiler, containerId, callback) {
 };
 
 /**
- * Calls back as `callback(err)`
+ * Calls back as `callback(stdout)`
  */
 function execute(dockerCompiler, containerId, callback) {
+  var fullStdout = '';
   // Run the compiler and runtime inside the container
-  var cmd = `docker exec ${containerId} bash -c`
-      + ` 'cd ${CONTAINER_USER_DIR}`
-      + ` && ./${COMPILE_SCRIPT_NAME}`
-      + ` "${dockerCompiler.seconds}"`
-      + ` "${dockerCompiler.compiler}" "${dockerCompiler.filename}"`
-      + ` "${INPUT_FILE_NAME}" "${dockerCompiler.runtime}"'`;
-  exec(cmd, function (err, stdout) {
-    if (err) {
-      console.log('error executing command:\n' + err);
+  var cmd = 'docker';
+  var args = [
+    'exec',
+    containerId,
+    'bash',
+    '-c',
+    `cd "${CONTAINER_USER_DIR}" && `
+     + `"./${COMPILE_SCRIPT_NAME}" "${dockerCompiler.seconds}" `
+     + `"${dockerCompiler.compiler}" "${dockerCompiler.filename}" `
+     + `"${dockerCompiler.input}" "${dockerCompiler.runtime}"`
+  ];
+  var childProcess = spawn(cmd, args);
+  childProcess.on('error', function (err) {
+    console.log('sorry boss, there was an error starting: ' + err);
+  });
+  childProcess.stderr.on('data', function (data) {
+    console.log('err received: ' + data);
+  });
+  childProcess.stdout.on('data', function (data) {
+    fullStdout += data;
+  });
+  childProcess.on('close', function (exitCode) {
+    console.log('cmd finished: ' + exitCode);
+    if (exitCode != 0) {
+      console.log('docker exec did not exit successfully! Exit code: ' + exitCode);
+    } else {
+      console.log(fullStdout);
+      callback(fullStdout);
     }
-    callback(stdout);
   });
 };
 
