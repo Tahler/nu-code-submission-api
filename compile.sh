@@ -63,35 +63,35 @@ get_status()
 # Begin script
 ################################################################################
 
-# TODO: extract date expression into constant
-start_time=$(date +%s.%N)
+DATE_EXPRESSION="+%s.%N"
+start_time=$(date $DATE_EXPRESSION)
 
 if [ "$runner" = "" ]; then
   # Interpretation
 
-  start_time=$(date +%s.%N)
+  start_time=$(date $DATE_EXPRESSION)
 
   # Redirect runtime errors to stdout
-  output=$( (execute "$seconds" "$compiler" "$source_file" 2>&1))
+  output=$(execute "$seconds" "$compiler" "$source_file" 2>&1)
   exit_code=$?
 else
   # Compilation
 
   # Redirect compilation errors to stdout
-  output=$( ("$compiler" "$source_file") 2>&1)
+  output=$("$compiler" "$source_file" 2>&1)
   exit_code=$?
 
 	if [ $exit_code -eq 0 ]; then
   	# No errors (i.e. last return code was 0)
 
-    start_time=$(date +%s.%N)
+    start_time=$(date $DATE_EXPRESSION)
 
     output=$(execute "$seconds" "$runner")
     exit_code=$?
 	fi
 fi
 
-end_time=$(date +%s.%N)
+end_time=$(date $DATE_EXPRESSION)
 total_time=$(echo "$end_time - $start_time" | bc)
 status=$(get_status "$exit_code")
 
