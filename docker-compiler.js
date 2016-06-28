@@ -136,9 +136,9 @@ function execute(dockerCompiler, containerId, callback) {
   var cmd = `docker exec ${containerId} bash -c`
       + ` 'cd ${CONTAINER_USER_DIR}`
       + ` && ./${COMPILE_SCRIPT_NAME}`
-      + ` ${dockerCompiler.seconds}`
-      + ` ${dockerCompiler.compiler} ${dockerCompiler.filename}`
-      + ` ${INPUT_FILE_NAME} ${dockerCompiler.runtime}'`;
+      + ` "${dockerCompiler.seconds}"`
+      + ` "${dockerCompiler.compiler}" "${dockerCompiler.filename}"`
+      + ` "${INPUT_FILE_NAME}" "${dockerCompiler.runtime}"'`;
   exec(cmd, function (err, stdout) {
     if (err) {
       console.log('error executing command:\n' + err);
