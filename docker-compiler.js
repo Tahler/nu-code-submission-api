@@ -148,7 +148,7 @@ function execute(dockerCompiler, containerId, callback) {
     `cd "${CONTAINER_USER_DIR}" && `
      + `"./${COMPILE_SCRIPT_NAME}" "${dockerCompiler.seconds}" `
      + `"${dockerCompiler.compiler}" "${dockerCompiler.filename}" `
-     + `"${dockerCompiler.input}" "${dockerCompiler.runtime}"`
+     + `"${INPUT_FILE_NAME}" "${dockerCompiler.runtime}"`
   ];
   var childProcess = spawn(cmd, args);
   childProcess.on('error', function (err) {
