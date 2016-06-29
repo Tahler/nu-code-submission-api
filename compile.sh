@@ -34,7 +34,7 @@ execute()
   output=$(cat "$input_file" | timeout "$seconds"s $command)
   exit_code=${PIPESTATUS[0]}
 
-  echo $output
+  echo "$output"
   return $exit_code
 }
 
@@ -98,4 +98,6 @@ status=$(get_status "$exit_code")
 # Escape all double quotes
 output=$(echo "$output" | sed 's/"/\\"/g')
 
-echo "{\"status\": \"$status\", \"output\": \"$output\", \"execTime\": $total_time}";
+cat <<EOF
+{"status": "$status", "output": "$output", "execTime": $total_time}
+EOF
