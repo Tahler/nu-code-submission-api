@@ -170,7 +170,6 @@ function execute(dockerCompiler, containerId, callback) {
     fullStdout += data;
   });
   childProcess.on('close', function (exitCode) {
-    console.log('cmd finished: ' + exitCode);
     if (exitCode != 0) {
       console.log(`docker exec errored with exit code: ${exitCode}`);
     } else {
