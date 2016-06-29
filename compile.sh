@@ -95,4 +95,7 @@ end_time=$(date $DATE_EXPRESSION)
 total_time=$(echo "$end_time - $start_time" | bc)
 status=$(get_status "$exit_code")
 
+# Escape all double quotes
+output=$(echo "$output" | sed 's/"/\\"/g')
+
 echo "{\"status\": \"$status\", \"output\": \"$output\", \"execTime\": $total_time}";
