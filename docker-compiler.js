@@ -88,13 +88,18 @@ function createNeededFilesInContainer(dockerCompiler, containerId, callback) {
 
   mkdirInContainer(CONTAINER_USER_DIR, containerId, function (err) {
     // Copy the script file
-    copyFileToContainer(COMPILE_SCRIPT_NAME, containerId,
-        `${CONTAINER_USER_DIR}/${COMPILE_SCRIPT_NAME}`, function (err) {
+    copyFileToContainer(
+        COMPILE_SCRIPT_NAME,
+        containerId,
+        `${CONTAINER_USER_DIR}/${COMPILE_SCRIPT_NAME}`,
+        function (err) {
       if (err) {
         done(err);
       } else {
         // Make the script file executable
-        makeFileExecutableInContainer(`${CONTAINER_USER_DIR}/${COMPILE_SCRIPT_NAME}`, containerId,
+        makeFileExecutableInContainer(
+            `${CONTAINER_USER_DIR}/${COMPILE_SCRIPT_NAME}`,
+            containerId,
             function (err) {
           if (!err) {
             scriptWritten = true;
@@ -105,8 +110,10 @@ function createNeededFilesInContainer(dockerCompiler, containerId, callback) {
     });
 
     // Write the source file
-    writeFileToContainer(dockerCompiler.code, containerId,
-        `${CONTAINER_USER_DIR}/${dockerCompiler.filename}`, function (err) {
+    writeFileToContainer(dockerCompiler.code,
+        containerId,
+        `${CONTAINER_USER_DIR}/${dockerCompiler.filename}`,
+        function (err) {
       if (!err) {
         sourceWritten = true;
       }
@@ -114,8 +121,10 @@ function createNeededFilesInContainer(dockerCompiler, containerId, callback) {
     });
 
     // Write the input file
-    writeFileToContainer(dockerCompiler.input, containerId,
-        `${CONTAINER_USER_DIR}/${INPUT_FILE_NAME}`, function (err) {
+    writeFileToContainer(dockerCompiler.input,
+        containerId,
+        `${CONTAINER_USER_DIR}/${INPUT_FILE_NAME}`,
+        function (err) {
       if (!err) {
         inputWritten = true;
       }
@@ -163,9 +172,8 @@ function execute(dockerCompiler, containerId, callback) {
   childProcess.on('close', function (exitCode) {
     console.log('cmd finished: ' + exitCode);
     if (exitCode != 0) {
-      console.log('docker exec did not exit successfully! Exit code: ' + exitCode);
+      console.log(`docker exec errored with exit code: ${exitCode}`);
     } else {
-      console.log(fullStdout);
       callback(fullStdout);
     }
   });
