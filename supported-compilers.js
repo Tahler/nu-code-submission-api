@@ -25,5 +25,14 @@ module.exports = {
   js: {
     compiler: 'nodejs',
     filename: 'solution.js'
+  },
+  // TODO: download
+  python: {
+    compiler: 'python2.7',
+    filename: 'solution.py'
+  },
+  python3: {
+    compiler: 'python3.5',
+    filename: 'solution.py'
   }
 }
