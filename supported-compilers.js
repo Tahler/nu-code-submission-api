@@ -26,7 +26,11 @@ module.exports = {
     compiler: 'nodejs',
     filename: 'solution.js'
   },
-  // TODO: download
+  csharp: {
+    compiler: 'mcs',
+    filename: 'solution.cs',
+    runtime: 'mono solution.exe'
+  },
   python: {
     compiler: 'python2.7',
     filename: 'solution.py'

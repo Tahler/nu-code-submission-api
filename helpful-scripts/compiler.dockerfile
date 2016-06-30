@@ -41,6 +41,10 @@ RUN apt-get install -y python2.7
 # Python 3 (Comes installed but kept for clarity)
 RUN apt-get install -y python3.5
 
+# C#
+RUN apt-get install -y mono-mcs
+RUN apt-get install -y mono-runtime
+
 ################################################################################
 # Cleanup
 ################################################################################
