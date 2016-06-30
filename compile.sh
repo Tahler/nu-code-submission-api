@@ -17,7 +17,7 @@
 #		3. The source file to be interpreted.
 #		4. The input file to be redirected as stdin.
 #	Example Usage:
-#   ./compile.sh 10 node file.js input.txt
+#   ./compile.sh 10 nodejs file.js input.txt
 
 seconds=$1
 compiler=$2
