@@ -17,6 +17,11 @@ module.exports = {
     filename: 'solution.c',
     runtime: './a.out'
   },
+  cpp: {
+    compiler: 'g++',
+    filename: 'solution.cpp',
+    runtime: './a.out'
+  },
   java: {
     compiler: 'javac',
     filename: 'Solution.java',

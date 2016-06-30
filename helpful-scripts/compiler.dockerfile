@@ -45,6 +45,9 @@ RUN apt-get install -y python3.5
 RUN apt-get install -y mono-mcs
 RUN apt-get install -y mono-runtime
 
+# C++ (Comes installed but kept for clarity)
+RUN apt-get install -y g++-5
+
 ################################################################################
 # Cleanup
 ################################################################################
