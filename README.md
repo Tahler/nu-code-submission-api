@@ -17,20 +17,22 @@ This is my capstone project.
 ### Infinite Loops (pass)
 
 ```
-curl -d '{"seconds": 3, "lang": "java", "src": "public class Solution {public static void main(String[] args) {while(true){System.out.println(true);}}}' -H "Content-Type: application/json" http://172.17.0.2:8080/api
+curl -d '{"seconds": 3, "lang": "java", "src": "public class Solution { public static void main(String[] args) { while (true) { System.out.println(true); } } }' -H "Content-Type: application/json" http://172.17.0.2:8080/api
 ```
 
 ### File Writing (pass)
 
 ```
-curl -d '{"seconds": 3, "lang": "java", "src": "import java.nio.file.*; public class Solution {public static void main(String[] args) {try{while(true){Files.write(Paths.get(\"hello.txt\"), new byte[1]);}} catch(Exception e) {e.printStackTrace();}}}"}' -H "Content-Type: application/json" http://172.17.0.2:8080/api
+curl -d '{"seconds": 3, "lang": "java", "src": "import java.nio.file.*; public class Solution { public static void main(String[] args) { try{ while (true) { Files.write(Paths.get(\"hello.txt\"), new byte[1]); } } catch (Exception e) { e.printStackTrace(); } } }"}' -H "Content-Type: application/json" http://172.17.0.2:8080/api
 ```
 
-### Flooding Output (fail)
+### Flooding Output (pass)
 
 ```
-curl -d '{"seconds": 3, "lang": "js", "src": "while(true){console.log(0);}"}' -H "Content-Type: application/json" http://172.17.0.2:8080/api
+curl -d '{"seconds": 3, "lang": "js", "src": "while (true) { console.log(0); }"}' -H "Content-Type: application/json" http://172.17.0.2:8080/api
 ```
+
+### Root level operations
 
 ### Bash Injection?
 
