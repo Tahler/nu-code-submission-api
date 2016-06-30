@@ -6,9 +6,6 @@ This is my capstone project.
 
 - Test with malicious code
 - Extend the API to run a diff against expected output
-- Extend the docker image to contain at least required compilers.
-  - C#
-  - C++
 
 ## Tests
 
