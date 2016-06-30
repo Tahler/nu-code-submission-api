@@ -7,6 +7,19 @@ This is my capstone project.
 - Test with malicious code
 - Extend the API to run a diff against expected output
 
+## Diff options
+
+- Extend the api to send an array of input and output pairs
+- Iteratively redirect each input and diff each output
+
+- Simple pass or fail
+- Number of tests passing
+- Very specific - this test failed: expected: x, actual: x
+- A progression over all three
+
+Check out:
+- KDiff3
+
 ## Tests
 
 - On each language:
