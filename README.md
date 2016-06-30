@@ -4,15 +4,10 @@ This is my capstone project.
 
 ## TODO:
 
-- Escape quotations
 - Test with malicious code
 - Extend the API to run a diff against expected output
 - Extend the docker image to contain at least required compilers.
-  - Java
   - C#
-  - JavaScript
-  - Python
-  - C
   - C++
 
 ## Tests
