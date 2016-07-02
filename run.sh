@@ -13,30 +13,20 @@
 #   ./run.sh 1 "./a.out" input.txt output.txt
 #   ./run.sh 3 "nodejs solution.js" input.txt output.txt
 
-seconds=$1
-command=$2
-input_file=$3
-output_file=$4
-
-execute()
-{
-  # TODO: I may not want the quotes around $command
-  output=$(cat "$input_file" | timeout "$seconds"s $command)
-  exit_code=${PIPESTATUS[0]}
-
-  echo "$output"
-  return $exit_code
-}
+SECONDS=$1
+COMMAND=$2
+INPUT_FILE=$3
+OUTPUT_FILE=$4
 
 get_status()
 {
-  exit_code="$1"
+  EXIT_CODE="$1"
 
   SUCCESS_CODE=0
   # 124 is the exit code for a timeout
   TIMEOUT_CODE=124
 
-  case "$exit_code" in
+  case "$EXIT_CODE" in
     $SUCCESS_CODE)
       echo "success"
       ;;
@@ -54,22 +44,29 @@ get_status()
 ################################################################################
 
 DATE_EXPRESSION="+%s.%N"
-start_time=$(date $DATE_EXPRESSION)
+START_TIME=$(date $DATE_EXPRESSION)
 
 # Redirect runtime errors to stdout
-output=$(execute "$seconds" "$command" "$input_file" "$output_file" 2>&1)
-exit_code=$?
+output=$( (cat "$INPUT_FILE" | timeout "$SECONDS"s $COMMAND) 2>&1)
+EXIT_CODE=${PIPESTATUS[0]}
 
-end_time=$(date $DATE_EXPRESSION)
-total_time=$(echo "$end_time - $start_time" | bc)
-status=$(get_status "$exit_code")
+END_TIME=$(date $DATE_EXPRESSION)
+TOTAL_TIME=$(echo "$END_TIME - $START_TIME" | bc)
+STATUS=$(get_status "$EXIT_CODE")
 
 # TODO: will I need to escape '\' to '\\' as well?
 # Escape all double quotes
 output=$(echo "$output" | sed 's/"/\\"/g')
 
+
+if [ $EXIT_CODE -eq 0 ]; then
+  echo "$output" > "$OUTPUT_FILE"
+else
+
 cat <<EOF
-{"status": "$status", "output": "$output", "execTime": $total_time}
+{"status": "$STATUS", "output": "$output", "execTime": $TOTAL_TIME}
 EOF
+
+fi
 
 exit $exit_code
