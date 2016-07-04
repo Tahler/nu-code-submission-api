@@ -12,13 +12,61 @@ This is my capstone project.
 - Extend the api to send an array of input and output pairs
 - Iteratively redirect each input and diff each output
 
-- Simple pass or fail
-- Number of tests passing
-- Very specific - this test failed: expected: x, actual: x
-- A progression over all three
+- Strict
+  - Shows only pass or fail
+  - Either all tests pass or the solution is deemed incorrect. Compilation and runtime errors are sent back to the user. No additional info is provided.
+- Simple // TODO: need a better name
+  - Shows the number of tests passing
+  - A simple report on each test will be sent back. Each test displays pass / fail
+- Hinting // TODO: need a better name
+  - Shows, for example, this test failed: expected: x, actual: x
+  - A specific report on each test will be sent back to the user. Each test displays pass / fail: expected: x, actual: x
+- A progression over all three stages following failed attempts
 
 Check out:
 - KDiff3
+
+### Implementation Thoughts
+
+Separate docker exec statements for compile.sh, run.sh, and diff.sh
+
+Flow:
+```
+compile.sh
+  if errors
+    exit with info
+  else
+    for each test case i
+      run.sh _ input-i.txt actual-output-i.txt
+        if errors
+          exit with info
+    if all run.sh's succeed (no errors)
+      for each test case i
+        diff.sh expected-output-i.txt actual-output.txt some-specificity-option
+          report
+      report
+
+What the user sees:
+--Compilation Error-------------------------------------------------------------
+Compilation Error:
+  __________
+--Simple Pass Fail--------------------------------------------------------------
+Correct / Incorrect
+Runtime Error:
+  __________
+--Number of Tests Passing-------------------------------------------------------
+Test 1/4:
+  Passed
+Test 2/4:
+  Failed
+Test 3/4:
+  Passed
+Test 4/4:
+  Runtime Error:
+    __________
+--Specific----------------------------------------------------------------------
+
+```
 
 ## Tests
 
