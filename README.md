@@ -4,9 +4,6 @@ This is my capstone project.
 
 ## TODO:
 
-- Test with malicious code
-- Extend the API to run a diff against expected output
-
 ## Diff options
 
 - Extend the api to send an array of input and output pairs
