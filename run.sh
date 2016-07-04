@@ -18,27 +18,6 @@ COMMAND=$2
 INPUT_FILE=$3
 OUTPUT_FILE=$4
 
-get_status()
-{
-  EXIT_CODE="$1"
-
-  SUCCESS_CODE=0
-  # 124 is the exit code for a timeout
-  TIMEOUT_CODE=124
-
-  case "$EXIT_CODE" in
-    $SUCCESS_CODE)
-      echo "success"
-      ;;
-    $TIMEOUT_CODE)
-      echo "timeout"
-      ;;
-    *)
-      echo "error"
-      ;;
-  esac
-}
-
 ################################################################################
 # Begin script
 ################################################################################
@@ -54,16 +33,26 @@ EXIT_CODE=${PIPESTATUS[0]}
 
 END_TIME=$(date $DATE_EXPRESSION)
 TOTAL_TIME=$(echo "$END_TIME - $START_TIME" | bc)
-STATUS=$(get_status "$EXIT_CODE")
 
-if [ $EXIT_CODE -eq 0 ]; then
-  # Successful run
-  # Report total exec time
-  echo $TOTAL_TIME
-else
-  # Unsuccessful run
-  # Report error message
-  echo "$output"
-fi
+# 124 is the exit code for a timeout
+TIMEOUT_CODE=124
+
+case $EXIT_CODE in
+  $SUCCESS_CODE)
+    # Successful run
+    # Report total exec time
+    echo $TOTAL_TIME
+    ;;
+  $TIMEOUT_CODE)
+    # Timeout
+    # Report timeout
+    echo "timeout"
+    ;;
+  *)
+    # Unsuccessful run
+    # Report error message
+    echo "$output"
+    ;;
+esac
 
 exit $EXIT_CODE
