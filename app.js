@@ -97,7 +97,6 @@ app.post('/api', jsonParser, function (req, res) {
     if (seconds > 0) {
       var dockerCompiler = new DockerCompiler(lang, code, seconds, tests);
       dockerCompiler.run(function (stdout) {
-console.log('checkpoint4');
         res.send(stdout);
       });
     } else {
