@@ -69,14 +69,14 @@ DockerCompiler.prototype.run = function (callback) {
               returnMessage = stdout;
             } else {
               // Success
-console.log('running');
+              // TODO: this is duplicate code
               runAllTests(dockerCompiler, containerId, function (err, results) {
-console.log('ran');
                 callback(err, results);
               });
             }
           });
         } else {
+          // TODO: this is duplicate code
           runAllTests(dockerCompiler, containerId, function (err, results) {
             callback(err, results);
           });
@@ -119,7 +119,6 @@ function startContainer(callback) {
 function createNeededFilesInContainer(dockerCompiler, containerId, callback) {
   var compileScriptWritten = false;
   var runScriptWritten = false;
-  var diffScriptWritten = false;
   var sourceWritten = false;
   var testCasesWritten = false;
 
@@ -138,14 +137,6 @@ console.log('dir made');
     copyScriptToContainer(RUN_SCRIPT_NAME, containerId, function (err) {
       if (!err) {
         runScriptWritten = true;
-      }
-      done(err);
-    });
-
-    // Copy the diff script
-    copyScriptToContainer(DIFF_SCRIPT_NAME, containerId, function (err) {
-      if (!err) {
-        diffScriptWritten = true;
       }
       done(err);
     });
@@ -213,7 +204,6 @@ console.log('dir made');
       } else if (
           compileScriptWritten
           && runScriptWritten
-          && diffScriptWritten
           && sourceWritten
           && testCasesWritten) {
         callback();
@@ -254,18 +244,6 @@ function compile(dockerCompiler, containerId, callback) {
     }
   });
 }
-
-/**
- * Calls back as `callback(err, stdout)`
- * Does not return the results of the tests.
- */
-function runTest(dockerCompiler, containerId, inputFilename, outputFilename, callback) {
-  var cmd = `docker exec ${containerId} bash -c`
-      + ` 'cd "${CONTAINER_USER_DIR}"`
-      + ` && "./${RUN_SCRIPT_NAME}" "${dockerCompiler.seconds}"`
-      + ` "${dockerCompiler.runtime}" "${inputFilename}" "${outputFilename}"'`;
-  exec(cmd, callback);
-};
 
 /**
  * Calls back as `callback(results)`
@@ -313,6 +291,20 @@ function runAllTests(dockerCompiler, containerId, callback) {
 }
 
 /**
+ * Calls back as `callback(err, stdout)`
+ * Does not return the results of the tests.
+ */
+function runTest(dockerCompiler, containerId, inputFilename, outputFilename, callback) {
+  var cmd = `docker exec ${containerId} bash -c`
+      + ` 'cd "${CONTAINER_USER_DIR}"`
+      + ` && "./${RUN_SCRIPT_NAME}" "${dockerCompiler.seconds}"`
+      + ` "${dockerCompiler.runtime}" "${inputFilename}" "${outputFilename}"'`;
+  exec(cmd, callback);
+};
+
+/**
+ * Uses wdiff to compare two files in a container word by word.
+ *
  * Calls back as `callback(results)`
  * Results is an array of objects with two properties each (example: [{expected: '0', actual: '1'}])
  * An empty array means there were no differences
@@ -326,7 +318,7 @@ function diff(dockerCompiler, containerId, expectedOutputFilename, actualOutputF
     'bash',
     '-c',
     `cd "${CONTAINER_USER_DIR}" &&`
-    + ` "./${DIFF_SCRIPT_NAME}" "${expectedOutputFilename}" "${actualOutputFilename}"`
+    + ` wdiff -3 "${expectedOutputFilename}" "${actualOutputFilename}" | sed '1d;2d;$d'`
   ];
   var childProcess = spawn(cmd, args);
   childProcess.on('error', function (err) {
