@@ -12,7 +12,7 @@ var PORT = 8080;
 var LANG_PROPERTY = 'lang';
 var SRC_PROPERTY = 'src';
 var TIMEOUT_PROPERTY = 'seconds';
-var INPUT_PROPERTY = 'input';
+var TESTS_PROPERTY = 'tests';
 var REQUIRED_PROPERTIES = [LANG_PROPERTY, SRC_PROPERTY];
 var BAD_REQUEST_ERR;
 (function () {
@@ -52,18 +52,34 @@ var DEFAULT_INPUT = '';
  * The next two fields are optional, and will be defaulted if not specified directly:
  * - "seconds": A number specifying the amount of seconds before a timeout is reported. The default
  *   is 10 minutes (600 seconds).
- * - "input": A string containing all of the input to be directed into the program.
+ * - "tests": An array of test case objects containing two properties:
+ *   - "input": The input string to be fed into the program
+ *   - "output": The expected string output
  *
  * Example request using cURL:
  * curl -d '{"lang": "c", "src": "#include <stdio.h>\n\nint main()\n{\n  printf(\"Hello, world!\");\n}"}' -H "Content-Type: application/json" http://localhost:8080/api
  *
+ * JSON examples
+ * {
+ *  "lang": "java",
+ *  "src": "import java.util.Scanner; public class Solution { public static void main(String[] args) { Scanner scanner = new Scanner(System.in); int x = scanner.nextInt(); int y = x * 2; System.out.println(y); } }",
+ *  "seconds": 4,
+ *  "tests": [
+ *    {"input": "0", "output": "0"},
+ *    {"input": "1", "output": "2"},
+ *    {"input": "-4", "output": "-8"},
+ *    {"input": "80", "output": "160"}
+ *  ]
+ * }
+ *
  * Responses are sent as JSON.
  * If the request was correctly formatted, then the JSON response will contain two properties:
  * - "status": A string acting as an enum:
- *   - "success" if the source code successfully compiled and ran.
+ *   - "pass" if the source code successfully compiled / ran and passed all tests.
+ *   - "fail" if the source code successfully compiled / ran but did not pass all tests.
  *   - "error" if the source code contained errors.
  *   - "timeout" if the time length specified in seconds was exceeeded.
- * - "output": A string containing the output of the program. If the program failed to compile,
+ * - "output": A string containing the results. If the program failed to compile,
  *   errors are reported here.
  * Otherwise, the JSON response will contain a single property:
  * - "error": A string detailing the error in the request.
@@ -76,18 +92,14 @@ app.post('/api', jsonParser, function (req, res) {
     var code = jsonReq[SRC_PROPERTY];
 
     var seconds = jsonReq[TIMEOUT_PROPERTY] || DEFAULT_TIMEOUT_SECONDS;
-    var input = jsonReq[INPUT_PROPERTY] || DEFAULT_INPUT;
+    var tests = jsonReq[TESTS_PROPERTY];
 
     if (seconds > 0) {
-      try {
-        var dockerCompiler = new DockerCompiler(lang, code, input, seconds);
-        dockerCompiler.run(function (stdout) {
-          res.send(stdout);
-        });
-      } catch (err) {
-        var jsonErr = `{"error": "${err.message}"}\n`;
-        res.send(jsonErr);
-      }
+      var dockerCompiler = new DockerCompiler(lang, code, seconds, tests);
+      dockerCompiler.run(function (stdout) {
+console.log('checkpoint4');
+        res.send(stdout);
+      });
     } else {
       var negSecondsErr = '{"error": "The seconds property must be positive."}\n';
       res.send(negSecondsErr);
