@@ -11,17 +11,20 @@ This is my capstone project.
 
 - Extend the api to send an array of input and output pairs
 - Iteratively redirect each input and diff each output
+- Either all tests pass or the solution is deemed incorrect.
 
 - Strict
-  - Shows only pass or fail
-  - Either all tests pass or the solution is deemed incorrect. Compilation and runtime errors are sent back to the user. No additional info is provided.
-- Simple // TODO: need a better name
+  - Shows only pass or fail. No additional info is provided, including compilation and runtime errors.
+- Error reporting
+  - Shows pass or fail. Any compilation or runtime errors are sent back to the user.
+- Granular
   - Shows the number of tests passing
-  - A simple report on each test will be sent back. Each test displays pass / fail
-- Hinting // TODO: need a better name
+  - A simple report on each test will be sent back. Each test displays pass / fail.
+- Hinting
   - Shows, for example, this test failed: expected: x, actual: x
   - A specific report on each test will be sent back to the user. Each test displays pass / fail: expected: x, actual: x
-- A progression over all three stages following failed attempts
+- Learning
+  - A progression over the bottom three stages following failed attempts
 
 Check out:
 - KDiff3
