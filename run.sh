@@ -62,17 +62,9 @@ output=$(echo "$output" | sed 's/"/\\"/g')
 
 # TODO: direct stdout to the output file and stderr to $output
 if [ $EXIT_CODE -eq 0 ]; then
-
-cat <<EOF
-{"status": "$STATUS", "execTime": $TOTAL_TIME}
-EOF
-
+  echo $TOTAL_TIME
 else
-
-cat <<EOF
-{"status": "$STATUS", "output": "$output", "execTime": $TOTAL_TIME}
-EOF
-
+  echo "$output"
 fi
 
 exit $EXIT_CODE

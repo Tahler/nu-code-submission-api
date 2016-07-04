@@ -246,26 +246,17 @@ function compile(dockerCompiler, containerId, callback) {
 }
 
 /**
- * Calls back as `callback(results)`
+ * Calls back as `callback(finalResult)`
  */
 function runAllTests(dockerCompiler, containerId, callback) {
-  var results = [];
+  var finalResult = {};
+  var passed = true;
+  var testResults = [];
+  var totalExecTime = 0;
   var numTests =  dockerCompiler.tests.length;
   var numTestsCompleted = 0;
-  function onTestResult(err, testNumber, testResult) {
-    if (err) {
-      results[testNumber] = {
-        error: err
-      };
-    } else {
-      results[testNumber] = testResult;
-    }
-    numTestsCompleted += 1;
-    if (numTestsCompleted === numTests) {
-      callback(results);
-    }
-  }
-  dockerCompiler.tests.forEach(function(test, i) {
+
+  dockerCompiler.tests.forEach(function(_, i) {
     runTest(
         dockerCompiler,
         containerId,
@@ -274,9 +265,13 @@ function runAllTests(dockerCompiler, containerId, callback) {
         function (err, stdout) {
       if (err) {
         // TODO: check on this
-        console.log('err running program: ' + stdout);
+        console.log('err running program: ' + err);
         onTestResult(stdout, i);
       } else {
+        var execTime = parseFloat(stdout);
+console.log(execTime);
+        totalExecTime += execTime;
+
         diff(
             dockerCompiler,
             containerId,
@@ -288,6 +283,28 @@ function runAllTests(dockerCompiler, containerId, callback) {
       }
     });
   });
+
+  function onTestResult(err, testNumber, testResult) {
+    if (err) {
+      testResults[testNumber] = {
+        error: err
+      };
+    } else {
+      if (!testResult.passed) {
+        passed = false;
+      }
+      testResults[testNumber] = testResult;
+    }
+    numTestsCompleted += 1;
+    if (numTestsCompleted === numTests) {
+      finalResult.passed = passed;
+      finalResult.totalExecTime = totalExecTime;
+      if (!passed) {
+        finalResult.results = testResults;
+      }
+      callback(finalResult);
+    }
+  }
 }
 
 /**
@@ -328,7 +345,6 @@ function diff(dockerCompiler, containerId, expectedOutputFilename, actualOutputF
     console.log('err received diffing: ' + data);
   });
   childProcess.stdout.on('data', function (data) {
-    console.log(`diff data: ${data}`);
     fullStdout += data;
   });
   childProcess.on('close', function (exitCode) {
@@ -345,7 +361,9 @@ function diff(dockerCompiler, containerId, expectedOutputFilename, actualOutputF
  * Returns an object with two properties: `passed` (boolean) and `differences` (array of objects).
  */
 function convertWdiffDataToObject(wdiffData) {
-  var passed = !wdiffData;
+  var result = {
+    passed: !wdiffData
+  };
   var differences = [];
   if (wdiffData) {
     // Fail
@@ -366,11 +384,9 @@ function convertWdiffDataToObject(wdiffData) {
         actual: actual,
       });
     });
+    result.differences = differences;
   }
-  return {
-    passed: passed,
-    differences: differences
-  };
+  return result;
 }
 
 /**
