@@ -47,7 +47,9 @@ DATE_EXPRESSION="+%s.%N"
 START_TIME=$(date $DATE_EXPRESSION)
 
 # Redirect runtime errors to stdout
-output=$( (cat "$INPUT_FILE" | timeout "$SECONDS"s $COMMAND) 2>&1)
+output=$( (cat "$INPUT_FILE" | timeout "$SECONDS"s $COMMAND) \
+  2>&1 \
+  1>$OUTPUT_FILE)
 EXIT_CODE=${PIPESTATUS[0]}
 
 END_TIME=$(date $DATE_EXPRESSION)
@@ -58,9 +60,13 @@ STATUS=$(get_status "$EXIT_CODE")
 # Escape all double quotes
 output=$(echo "$output" | sed 's/"/\\"/g')
 
-
+# TODO: direct stdout to the output file and stderr to $output
 if [ $EXIT_CODE -eq 0 ]; then
-  echo "$output" > "$OUTPUT_FILE"
+
+cat <<EOF
+{"status": "$STATUS", "execTime": $TOTAL_TIME}
+EOF
+
 else
 
 cat <<EOF
@@ -69,4 +75,4 @@ EOF
 
 fi
 
-exit $exit_code
+exit $EXIT_CODE
