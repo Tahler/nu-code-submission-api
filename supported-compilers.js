@@ -28,8 +28,8 @@ module.exports = {
     runtime: 'java Solution'
   },
   js: {
-    compiler: 'nodejs',
-    filename: 'solution.js'
+    filename: 'solution.js',
+    runtime: 'nodejs solution.js'
   },
   csharp: {
     compiler: 'mcs',
@@ -37,11 +37,11 @@ module.exports = {
     runtime: 'mono solution.exe'
   },
   python: {
-    compiler: 'python2.7',
-    filename: 'solution.py'
+    filename: 'solution.py',
+    runtime: 'python2.7 solution.py'
   },
   python3: {
-    compiler: 'python3.5',
-    filename: 'solution.py'
+    filename: 'solution.py',
+    runtime: 'python3.5 solution.py'
   }
 }
