@@ -63,10 +63,12 @@ DockerCompiler.prototype.run = function (callback) {
         console.log('error copying files to container:\n' + err);
       } else {
         if (dockerCompiler.isCompiled()) {
-          compile(dockerCompiler, containerId, function (exitCode, stdout) {
-            if (exitCode) {
+          compile(dockerCompiler, containerId, function (err, stdout) {
+            if (err) {
               // Error
-              returnMessage = stdout;
+              callback({
+                error: err
+              });
             } else {
               // Success
               // TODO: this is duplicate code
@@ -212,9 +214,10 @@ function createNeededFilesInContainer(dockerCompiler, containerId, callback) {
 };
 
 /**
- * Calls back as `callback(exitCode, stdout)`
+ * Calls back as `callback(err, stdout)`
  */
 function compile(dockerCompiler, containerId, callback) {
+  var fullErr = '';
   var fullStdout = '';
   var cmd = 'docker';
   var args = [
@@ -230,17 +233,13 @@ function compile(dockerCompiler, containerId, callback) {
     console.log('sorry boss, there was an error starting the compilation command: ' + err);
   });
   childProcess.stderr.on('data', function (data) {
-    console.log('err received: ' + data);
+    fullErr += data;
   });
   childProcess.stdout.on('data', function (data) {
     fullStdout += data;
   });
   childProcess.on('close', function (exitCode) {
-    if (exitCode == 0) {
-      callback(exitCode, fullStdout);
-    } else {
-      console.log(`docker exec errored with exit code: ${exitCode}`);
-    }
+    callback(fullErr, fullStdout);
   });
 }
 
