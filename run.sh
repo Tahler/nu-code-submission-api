@@ -56,14 +56,13 @@ END_TIME=$(date $DATE_EXPRESSION)
 TOTAL_TIME=$(echo "$END_TIME - $START_TIME" | bc)
 STATUS=$(get_status "$EXIT_CODE")
 
-# TODO: will I need to escape '\' to '\\' as well?
-# Escape all double quotes
-output=$(echo "$output" | sed 's/"/\\"/g')
-
-# TODO: direct stdout to the output file and stderr to $output
 if [ $EXIT_CODE -eq 0 ]; then
+  # Successful run
+  # Report total exec time
   echo $TOTAL_TIME
 else
+  # Unsuccessful run
+  # Report error message
   echo "$output"
 fi
 

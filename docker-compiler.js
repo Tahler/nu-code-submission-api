@@ -123,7 +123,6 @@ function createNeededFilesInContainer(dockerCompiler, containerId, callback) {
   var testCasesWritten = false;
 
   mkdirInContainer(CONTAINER_USER_DIR, containerId, function (err) {
-console.log('dir made');
     // Copy the compile script
 // TODO: only if a compiled lang?
     copyScriptToContainer(COMPILE_SCRIPT_NAME, containerId, function (err) {
@@ -237,10 +236,10 @@ function compile(dockerCompiler, containerId, callback) {
     fullStdout += data;
   });
   childProcess.on('close', function (exitCode) {
-    if (exitCode != 0) {
-      console.log(`docker exec errored with exit code: ${exitCode}`);
-    } else {
+    if (exitCode == 0) {
       callback(exitCode, fullStdout);
+    } else {
+      console.log(`docker exec errored with exit code: ${exitCode}`);
     }
   });
 }
@@ -269,7 +268,6 @@ function runAllTests(dockerCompiler, containerId, callback) {
         onTestResult(stdout, i);
       } else {
         var execTime = parseFloat(stdout);
-console.log(execTime);
         totalExecTime += execTime;
 
         diff(
@@ -286,6 +284,7 @@ console.log(execTime);
 
   function onTestResult(err, testNumber, testResult) {
     if (err) {
+      passed = false;
       testResults[testNumber] = {
         error: err
       };
