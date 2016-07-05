@@ -90,14 +90,13 @@ app.post('/api', jsonParser, function (req, res) {
   if (hasRequiredProperties(jsonReq, REQUIRED_PROPERTIES)) {
     var lang = jsonReq[LANG_PROPERTY];
     var code = jsonReq[SRC_PROPERTY];
-
-    var seconds = jsonReq[TIMEOUT_PROPERTY] || DEFAULT_TIMEOUT_SECONDS;
     var tests = jsonReq[TESTS_PROPERTY];
+    var seconds = jsonReq[TIMEOUT_PROPERTY] || DEFAULT_TIMEOUT_SECONDS;
 
     if (seconds > 0) {
       var dockerCompiler = new DockerCompiler(lang, code, seconds, tests);
-      dockerCompiler.run(function (stdout) {
-        res.send(stdout);
+      dockerCompiler.run(function (result) {
+        res.send(result);
       });
     } else {
       var negSecondsErr = '{"error": "The seconds property must be positive."}\n';

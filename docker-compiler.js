@@ -44,13 +44,7 @@ DockerCompiler.prototype.isCompiled = function () {
 };
 
 /**
- * Start
- * Copy files
- * Compile if necessary
- * For each test
- *  Run input, get output
- * For each test
- *  Diff expected with actual
+ *
  */
 DockerCompiler.prototype.run = function (callback) {
   var returnMessage;
@@ -65,22 +59,20 @@ DockerCompiler.prototype.run = function (callback) {
         if (dockerCompiler.isCompiled()) {
           compile(dockerCompiler, containerId, function (err, stdout) {
             if (err) {
-              // Error
               callback({
                 error: err
               });
             } else {
-              // Success
               // TODO: this is duplicate code
-              runAllTests(dockerCompiler, containerId, function (err, results) {
-                callback(err, results);
+              runAllTests(dockerCompiler, containerId, function (result) {
+                callback(result);
               });
             }
           });
         } else {
           // TODO: this is duplicate code
-          runAllTests(dockerCompiler, containerId, function (err, results) {
-            callback(err, results);
+          runAllTests(dockerCompiler, containerId, function (result) {
+            callback(result);
           });
         }
       }
