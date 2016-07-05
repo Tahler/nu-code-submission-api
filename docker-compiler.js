@@ -44,7 +44,7 @@ DockerCompiler.prototype.isCompiled = function () {
 };
 
 /**
- *
+ * Calls back as callback(result)
  */
 DockerCompiler.prototype.run = function (callback) {
   var returnMessage;
@@ -93,7 +93,7 @@ function UnsupportedLanguageException(lang) {
 }
 
 /**
- * Callback called as `callback(generatedContainerId)`
+ * Calls back as `callback(generatedContainerId)`
  */
 function startContainer(callback) {
   exec(`docker run -d -i ${DOCKER_IMAGE}`, function (err, stdout) {
@@ -387,11 +387,11 @@ function cleanup(containerId, callback) {
   // Kill the container
   exec(`docker kill ${containerId}`, function (err) {
     if (err) {
-      callback(err);
+      typeof(callback) == 'function' && callback(err);
     } else {
       // Remove the container
       exec(`docker rm ${containerId}`, function (err) {
-        callback(err);
+        typeof(callback) == 'function' && callback(err);
       });
     }
   });
