@@ -102,7 +102,6 @@ function startContainer(callback) {
     } else {
       // stdout likes to put \n at the end. take it away via `substring`
       var containerId = stdout.substring(0, stdout.length - 1);
-      // TODO: see if this holds true later
       exec(`docker exec ${containerId} cd ${CONTAINER_USER_DIR}`, function (err) {
         callback(containerId);
       });
@@ -257,7 +256,6 @@ function runAllTests(dockerCompiler, containerId, callback) {
         `${ACTUAL_OUTPUT_FILE_NAME_PREFIX}${i}`,
         function (err, stdout) {
       if (err) {
-        // TODO: check on this
         console.log('err running program: ' + err);
         onTestResult(stdout, i);
       } else {
