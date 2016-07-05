@@ -96,7 +96,8 @@ app.post('/api', jsonParser, function (req, res) {
     if (seconds > 0) {
       var dockerCompiler = new DockerCompiler(lang, code, seconds, tests);
       dockerCompiler.run(function (result) {
-        res.send(result);
+        var jsonResult = JSON.stringify(result);
+        res.send(`${jsonResult}\n`);
       });
     } else {
       var negSecondsErr = '{"error": "The seconds property must be positive."}\n';
