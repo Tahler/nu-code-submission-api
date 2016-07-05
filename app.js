@@ -13,7 +13,7 @@ var LANG_PROPERTY = 'lang';
 var SRC_PROPERTY = 'src';
 var TIMEOUT_PROPERTY = 'seconds';
 var TESTS_PROPERTY = 'tests';
-var REQUIRED_PROPERTIES = [LANG_PROPERTY, SRC_PROPERTY];
+var REQUIRED_PROPERTIES = [LANG_PROPERTY, SRC_PROPERTY, TESTS_PROPERTY];
 var BAD_REQUEST_ERR;
 (function () {
   var requiredPropertiesLength = REQUIRED_PROPERTIES.length;
@@ -49,12 +49,12 @@ var DEFAULT_INPUT = '';
  * - "lang": A string specifying the language code of the source code. A full list can be found in
  *   the properties of compilers.js.
  * - "src": A string containing all of the source code.
- * The next two fields are optional, and will be defaulted if not specified directly:
- * - "seconds": A number specifying the amount of seconds before a timeout is reported. The default
- *   is 10 minutes (600 seconds).
  * - "tests": An array of test case objects containing two properties:
  *   - "input": The input string to be fed into the program
  *   - "output": The expected string output
+ * The last property is optional, and will be defaulted if not specified directly:
+ * - "seconds": A number specifying the amount of seconds before a timeout is reported. The default
+ *   is 10 minutes (600 seconds).
  *
  * Example request using cURL:
  * curl -d '{"lang": "c", "src": "#include <stdio.h>\n\nint main()\n{\n  printf(\"Hello, world!\");\n}"}' -H "Content-Type: application/json" http://localhost:8080/api
