@@ -49,6 +49,7 @@ DockerCompiler.prototype.isCompiled = function () {
 DockerCompiler.prototype.run = function (callback) {
   var returnMessage;
   var dockerCompiler = this;
+
   // Create the container
   startContainer(function (containerId) {
     // Copy all the files needed later
@@ -63,16 +64,18 @@ DockerCompiler.prototype.run = function (callback) {
                 error: err
               });
             } else {
-              // TODO: this is duplicate code
+              // TODO: duplicate code
               runAllTests(dockerCompiler, containerId, function (result) {
                 callback(result);
+                cleanup(containerId);
               });
             }
           });
         } else {
-          // TODO: this is duplicate code
+          // TODO: duplicate code
           runAllTests(dockerCompiler, containerId, function (result) {
             callback(result);
+            cleanup(containerId);
           });
         }
       }
