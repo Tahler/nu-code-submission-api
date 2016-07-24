@@ -1,27 +1,49 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Firebase Authentication
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var firebase = require('firebase');
+
+firebase.initializeApp({
+  serviceAccount: './credentials/nu-code-server.json',
+  databaseURL: 'https://nu-code-350ea.firebaseio.com',
+  databaseAuthVariableOverride: {
+    uid: 'compilation-api'
+  }
+});
+
+var db = firebase.database();
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Express Setup
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 var express = require('express');
 var app = express();
 
-var bodyParser = require('body-parser');
-var jsonParser = bodyParser.json();
+var jsonParser = require('body-parser').json();
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Constants
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 var compilers = require('./supported-compilers');
 var DockerCompiler = require('./docker-compiler');
 
 var PORT = 8080;
 
-var LANG_PROPERTY = 'lang';
-var SRC_PROPERTY = 'src';
-var TIMEOUT_PROPERTY = 'seconds';
-var TESTS_PROPERTY = 'tests';
-var REQUIRED_PROPERTIES = [LANG_PROPERTY, SRC_PROPERTY, TESTS_PROPERTY];
-var BAD_REQUEST_ERR;
+var LangProperty = 'lang';
+var SrcProperty = 'src';
+var ProblemProperty = 'problem';
+var RequiredProperties = [LangProperty, SrcProperty, ProblemProperty];
+var BadRequestErr;
 (function () {
-  var requiredPropertiesLength = REQUIRED_PROPERTIES.length;
+  var requiredPropertiesLength = RequiredProperties.length;
   var propertyOrProperties = requiredPropertiesLength == 1 ? 'property' : 'properties';
 
   var list = '';
   if (requiredPropertiesLength == 1) {
-    list = REQUIRED_PROPERTIES[0];
+    list = RequiredProperties[0];
   } else {
     // assume greater than 1
     for (var i = 0; i < requiredPropertiesLength; i++) {
@@ -31,15 +53,19 @@ var BAD_REQUEST_ERR;
       if (i == requiredPropertiesLength - 1) {
         list += 'and '
       }
-      list += REQUIRED_PROPERTIES[i];
+      list += RequiredProperties[i];
     }
   }
 
-  BAD_REQUEST_ERR = `Requests must be sent as JSON containing at least ${requiredPropertiesLength} `
-    + `${propertyOrProperties}: ${list}.`;
+  BadRequestErr = {
+    error: `Requests must be sent as JSON containing at least`
+            + ` ${requiredPropertiesLength} ${propertyOrProperties}: ${list}.`
+  };
 })();
-var DEFAULT_TIMEOUT_SECONDS = 10;
-var DEFAULT_INPUT = '';
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Web API
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Allow CORS (Cross-Origin Resource Sharing)
 app.use(function (req, res, next) {
@@ -54,70 +80,68 @@ app.use(function (req, res, next) {
 });
 
 /**
- * Details the Web API for compilation.
- *
- * Requests should be sent to this API as a post request containing JSON with at least the following
- * two fields:
- * - "lang": A string specifying the language code of the source code. A full list can be found in
- *   the properties of compilers.js.
- * - "src": A string containing all of the source code.
- * - "tests": An array of test case objects containing two properties:
- *   - "input": The input string to be fed into the program
- *   - "output": The expected string output
- * The last property is optional, and will be defaulted if not specified directly:
- * - "seconds": A number specifying the amount of seconds before a timeout is reported. The default
- *   is 10 minutes (600 seconds).
- *
- * Example request using cURL:
- * curl -d '{"lang": "c", "src": "#include <stdio.h>\n\nint main()\n{\n  printf(\"Hello, world!\");\n}"}' -H "Content-Type: application/json" http://localhost:8080/api
- *
- * JSON examples
- * {
- *  "lang": "java",
- *  "src": "import java.util.Scanner; public class Solution { public static void main(String[] args) { Scanner scanner = new Scanner(System.in); int x = scanner.nextInt(); int y = x * 2; System.out.println(y); } }",
- *  "seconds": 4,
- *  "tests": [
- *    {"input": "0", "output": "0"},
- *    {"input": "1", "output": "2"},
- *    {"input": "-4", "output": "-8"},
- *    {"input": "80", "output": "160"}
- *  ]
- * }
- *
- * Responses are sent as JSON.
- * If the request was correctly formatted, then the JSON response will contain two properties:
- * - "status": A string acting as an enum:
- *   - "pass" if the source code successfully compiled / ran and passed all tests.
- *   - "fail" if the source code successfully compiled / ran but did not pass all tests.
- *   - "error" if the source code contained errors.
- *   - "timeout" if the time length specified in seconds was exceeeded.
- * - "output": A string containing the results. If the program failed to compile,
- *   errors are reported here.
- * Otherwise, the JSON response will contain a single property:
- * - "error": A string detailing the error in the request.
+ * See documentation on usage here:
+ * https://github.com/Tahler/capstone-api
  */
 app.post('/api', jsonParser, function (req, res) {
   var jsonReq = req.body;
 
-  if (hasRequiredProperties(jsonReq, REQUIRED_PROPERTIES)) {
-    var lang = jsonReq[LANG_PROPERTY];
-    var code = jsonReq[SRC_PROPERTY];
-    var tests = jsonReq[TESTS_PROPERTY];
-    var seconds = jsonReq[TIMEOUT_PROPERTY] || DEFAULT_TIMEOUT_SECONDS;
+  if (hasRequiredProperties(jsonReq, RequiredProperties)) {
+    var lang = jsonReq[LangProperty];
+    var code = jsonReq[SrcProperty];
+    var problemId = jsonReq[ProblemProperty];
 
-    if (seconds > 0) {
+    // Loaded asynchronously from firebase
+    var seconds, feedback, tests;
+    // Set to true in case of errors in order to stop from sending errors back to the user twice
+    var errors = false;
+
+    // Get problem info
+    db.ref(`/problems/${problemId}`).once('value', function (snapshot) {
+      if (snapshot.exists()) {
+        var problem = snapshot.val();
+        feedback = problem.feedback;
+        seconds = problem.timeout;
+        onDataLoad();
+      } else {
+        onDataLoad(`Problem "${problemId}" does not exist.`);
+      }
+    }, function (err) {
+      console.log(`Error loading problem: ${err}`);
+      onDataLoad(err);
+    });
+    // Get tests
+    db.ref(`/tests/${problemId}`).once('value', function (snapshot) {
+      if (snapshot.exists()) {
+        tests = snapshot.val();
+        onDataLoad();
+      } else {
+        onDataLoad(`Problem "${problemId}" does not exist.`);
+      }
+    }, function (err) {
+      console.log(`Error loading tests: ${err}`);
+      onDataLoad(err);
+    });
+
+    function onDataLoad(err) {
+      if (err && !errors) {
+        errors = true;
+        res.send({ error: err });
+      } else if (seconds && feedback && tests) {
+        runInDocker();
+      }
+    }
+
+    function runInDocker() {
       var dockerCompiler = new DockerCompiler(lang, code, seconds, tests);
       dockerCompiler.run(function (result) {
-        var jsonResult = JSON.stringify(result);
-        res.send(`${jsonResult}\n`);
+        // TODO: filter the result based on the feedback level
+        res.send(result);
       });
-    } else {
-      var negSecondsErr = '{"error": "The seconds property must be positive."}\n';
-      res.send(negSecondsErr);
     }
   } else {
-    var badRequestErr = `{"error": "${BAD_REQUEST_ERR}"}\n`;
-    res.send(badRequestErr);
+    var badRequestErr = JSON.stringify(BadRequestErr);
+    res.send(BadRequestErr);
   }
 });
 

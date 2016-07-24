@@ -1,3 +1,6 @@
+# Sensitive data
+credentials/
+
 # Logs
 logs
 *.log

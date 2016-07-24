@@ -24,7 +24,7 @@ JSON example:
 
 Example request using cURL:
 
-`curl -d '{"lang": "c", "src": "#include <stdio.h>\n\nint main()\n{\n  printf(\"Hello, world!\");\n}"}' -H "Content-Type: application/json" http://localhost:8080/api`
+`curl -d '{ "lang": "java", "src": "import java.util.Scanner;\npublic class Solution {\n  public static void main(String[] args) {\n    Scanner scanner = new Scanner(System.in);\n    int x = scanner.nextInt();\n    int y = x * 2;\n    System.out.println(y);\n  }\n}\n", "problem": "Double"}' -H "Content-Type: application/json" http://localhost:8080/api`
 
 ## Responses
 
