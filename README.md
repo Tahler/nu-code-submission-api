@@ -104,12 +104,13 @@ of "pass", "fail", "timeout", or "error". In the case of a failed submission, a 
     "status": "fail",
     "differences": [ {
       "expected":"2",
-      "actual":"3" } ]
+      "actual":"3"
+    } ]
   }, {
     "status": "error",
-    "message": [ {
-      "expected":"2",
-      "actual":"3" } ]
+    "message": "stack overflow or something"
+  }, {
+    "status": "timeout"
   }, {
     "status": "pass"
   } ]
