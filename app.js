@@ -90,7 +90,7 @@ app.use(function (req, res, next) {
   res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
   if ('OPTIONS' === req.method) {
-    res.send(200);
+    res.sendStatus(200);
   } else {
     next();
   }
@@ -132,7 +132,7 @@ app.post('/api', jsonParser, function (req, res) {
     function onDataLoad(err) {
       if (err && !errorsOccurred) {
         errorsOccurred = true;
-        res.send({ error: err });
+        res.status(500).send({ error: err });
       } else if (seconds !== undefined && shouldReveal !== undefined && tests !== undefined) {
         runInDocker();
       }
@@ -141,12 +141,12 @@ app.post('/api', jsonParser, function (req, res) {
     function runInDocker() {
       var dockerCompiler = new DockerCompiler(lang, code, seconds, tests, shouldReveal);
       dockerCompiler.run(function (result) {
-        res.send(result);
+        res.status(200).send(result);
       });
     }
   } else {
     var badRequestErr = JSON.stringify(BadRequestErr);
-    res.send(BadRequestErr);
+    res.status(400).send(BadRequestErr);
   }
 });
 
