@@ -14,6 +14,23 @@ firebase.initializeApp({
 
 var db = firebase.database();
 
+/**
+ * Callsback as `callback(err)`
+ */
+function loadFromFirebase(dataLocation, callback) {
+  db.ref(dataLocation).once('value', function (snapshot) {
+      if (snapshot.exists()) {
+        callback(undefined, snapshot.val());
+      } else {
+        var err = `Data at "${dataLocation}" does not exist.`
+        callback(err);
+      }
+    }, function (err) {
+      console.error(`Error loading from firebase: ${err}`);
+      callback(err);
+    });
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Express Setup
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -92,50 +109,38 @@ app.post('/api', jsonParser, function (req, res) {
     var problemId = jsonReq[ProblemProperty];
 
     // Loaded asynchronously from firebase
-    var seconds, feedback, tests;
+    var seconds, shouldReveal, tests;
     // Set to true in case of errors in order to stop from sending errors back to the user twice
-    var errors = false;
+    var errorsOccurred = false;
 
     // Get problem info
-    db.ref(`/problems/${problemId}`).once('value', function (snapshot) {
-      if (snapshot.exists()) {
-        var problem = snapshot.val();
-        feedback = problem.feedback;
+    loadFromFirebase(`/problems/${problemId}`, function (err, problem) {
+      if (!err) {
         seconds = problem.timeout;
-        onDataLoad();
-      } else {
-        onDataLoad(`Problem "${problemId}" does not exist.`);
+        shouldReveal = problem.feedback.toLowerCase() === 'revealing';
       }
-    }, function (err) {
-      console.log(`Error loading problem: ${err}`);
       onDataLoad(err);
     });
     // Get tests
-    db.ref(`/tests/${problemId}`).once('value', function (snapshot) {
-      if (snapshot.exists()) {
-        tests = snapshot.val();
-        onDataLoad();
-      } else {
-        onDataLoad(`Problem "${problemId}" does not exist.`);
+    loadFromFirebase(`/tests/${problemId}`, function (err, testCases) {
+      if (!err) {
+        tests = testCases;
       }
-    }, function (err) {
-      console.log(`Error loading tests: ${err}`);
       onDataLoad(err);
     });
 
     function onDataLoad(err) {
-      if (err && !errors) {
-        errors = true;
+      if (err && !errorsOccurred) {
+        errorsOccurred = true;
         res.send({ error: err });
-      } else if (seconds && feedback && tests) {
+      } else if (seconds !== undefined && shouldReveal !== undefined && tests !== undefined) {
         runInDocker();
       }
     }
 
     function runInDocker() {
-      var dockerCompiler = new DockerCompiler(lang, code, seconds, tests);
+      var dockerCompiler = new DockerCompiler(lang, code, seconds, tests, shouldReveal);
       dockerCompiler.run(function (result) {
-        // TODO: filter the result based on the feedback level
         res.send(result);
       });
     }

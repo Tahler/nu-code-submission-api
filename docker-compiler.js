@@ -16,23 +16,24 @@ var DIFF_SCRIPT_NAME = 'diff.sh';
 var INPUT_FILE_NAME_PREFIX = 'input-';
 var EXPECTED_OUTPUT_FILE_NAME_PREFIX = 'expected-output-';
 var ACTUAL_OUTPUT_FILE_NAME_PREFIX = 'actual-output-';
+var TIMEOUT_CODE = 124;
 
 var DIFF_EXPECTED_REGEX = '';
 var DIFF_ACTUAL_REGEX = '';
 var DIFF_DELIMITER = '======================================================================';
 
-var DockerCompiler = function (lang, code, seconds, tests) {
+var DockerCompiler = function (lang, code, seconds, tests, shouldReveal) {
   if (compilers.hasOwnProperty(lang)) {
     this.lang = lang;
     this.code = code;
     this.seconds = seconds;
+    this.tests = tests;
+    this.shouldReveal = shouldReveal;
 
     var params = compilers[lang];
     this.compiler = params.compiler || '';
     this.filename = params.filename || '';
     this.runtime = params.runtime || '';
-
-    this.tests = tests;
   } else {
     throw new UnsupportedLanguageException(lang);
   }
@@ -55,7 +56,7 @@ DockerCompiler.prototype.run = function (callback) {
     // Copy all the files needed later
     createNeededFilesInContainer(dockerCompiler, containerId, function (err) {
       if (err) {
-        console.log('error copying files to container:\n' + err);
+        console.error('error copying files to container:\n' + err);
       } else {
         if (dockerCompiler.isCompiled()) {
           compile(dockerCompiler, containerId, function (err, stdout) {
@@ -98,7 +99,7 @@ function UnsupportedLanguageException(lang) {
 function startContainer(callback) {
   exec(`docker run -d -i ${DOCKER_IMAGE}`, function (err, stdout) {
     if (err) {
-      console.log('error starting image ' + err);
+      console.error('error starting image ' + err);
     } else {
       // stdout likes to put \n at the end. take it away via `substring`
       var containerId = stdout.substring(0, stdout.length - 1);
@@ -119,14 +120,17 @@ function createNeededFilesInContainer(dockerCompiler, containerId, callback) {
   var testCasesWritten = false;
 
   mkdirInContainer(CONTAINER_USER_DIR, containerId, function (err) {
-    // Copy the compile script
-// TODO: only if a compiled lang?
-    copyScriptToContainer(COMPILE_SCRIPT_NAME, containerId, function (err) {
-      if (!err) {
-        compileScriptWritten = true;
-      }
-      done(err);
-    });
+    // Copy the compile script if needed
+    if (dockerCompiler.isCompiled()) {
+      copyScriptToContainer(COMPILE_SCRIPT_NAME, containerId, function (err) {
+        if (!err) {
+          compileScriptWritten = true;
+        }
+        done(err);
+      });
+    } else {
+      compileScriptWritten = true;
+    }
 
     // Copy the run script
     copyScriptToContainer(RUN_SCRIPT_NAME, containerId, function (err) {
@@ -224,13 +228,13 @@ function compile(dockerCompiler, containerId, callback) {
   ];
   var childProcess = spawn(cmd, args);
   childProcess.on('error', function (err) {
-    console.log('sorry boss, there was an error starting the compilation command: ' + err);
-  });
-  childProcess.stderr.on('data', function (data) {
-    fullErr += data;
+    console.error('sorry boss, there was an error starting the compilation command: ' + err);
   });
   childProcess.stdout.on('data', function (data) {
     fullStdout += data;
+  });
+  childProcess.stderr.on('data', function (data) {
+    fullErr += data;
   });
   childProcess.on('close', function (exitCode) {
     callback(fullErr, fullStdout);
@@ -238,84 +242,110 @@ function compile(dockerCompiler, containerId, callback) {
 }
 
 /**
+ * Calls back as `callback(testNumber, err, stdout)` where `stdout` is the output of run.sh
+ * Does not return the results of the tests.
+ */
+function runTest(dockerCompiler, containerId, testNumber, callback) {
+  var inputFilename = `${INPUT_FILE_NAME_PREFIX}${testNumber}`;
+  var outputFilename = `${ACTUAL_OUTPUT_FILE_NAME_PREFIX}${testNumber}`;
+
+  var cmd = `docker exec ${containerId} bash -c`
+      + ` 'cd "${CONTAINER_USER_DIR}"`
+      + ` && "./${RUN_SCRIPT_NAME}" "${dockerCompiler.seconds}"`
+      + ` "${dockerCompiler.runtime}" "${inputFilename}" "${outputFilename}"'`;
+  exec(cmd, function (err, stdout) {
+    callback(testNumber, err, stdout)
+  });
+};
+
+/**
  * Calls back as `callback(finalResult)`
  */
 function runAllTests(dockerCompiler, containerId, callback) {
   var finalResult = {};
-  var passed = true;
   var testResults = [];
   var totalExecTime = 0;
+  var firstErr;
+
   var numTests =  dockerCompiler.tests.length;
   var numTestsCompleted = 0;
 
-  dockerCompiler.tests.forEach(function(_, i) {
-    runTest(
-        dockerCompiler,
-        containerId,
-        `${INPUT_FILE_NAME_PREFIX}${i}`,
-        `${ACTUAL_OUTPUT_FILE_NAME_PREFIX}${i}`,
-        function (err, stdout) {
-      if (err) {
-        console.log('err running program: ' + err);
-        onTestResult(stdout, i);
-      } else {
-        var execTime = parseFloat(stdout);
-        totalExecTime += execTime;
+  for (var i = 0; i < numTests; i++) {
+    runTest(dockerCompiler, containerId, i, onTestFinished);
+  }
 
-        diff(
-            dockerCompiler,
-            containerId,
-            `${EXPECTED_OUTPUT_FILE_NAME_PREFIX}${i}`,
-            `${ACTUAL_OUTPUT_FILE_NAME_PREFIX}${i}`,
-            function (result) {
-          onTestResult(undefined, i, result);
-        });
-      }
-    });
-  });
-
-  function onTestResult(err, testNumber, testResult) {
+  function onTestFinished(testNumber, err, stdout) {
+    var testResult = {};
     if (err) {
-      passed = false;
-      testResults[testNumber] = {
-        error: err
-      };
+      if (err.code === TIMEOUT_CODE) {
+        // Err because timeout
+        testResult.status = 'timeout';
+      } else {
+        // Err because runtime error
+        testResult.status = 'error';
+        testResult.message = stdout;
+      }
+      if (!firstErr) {
+        firstErr = testResult;
+      }
+      onTestResult(testNumber, testResult);
     } else {
-      if (!testResult.passed) {
-        passed = false;
-      }
-      testResults[testNumber] = testResult;
+      // See if the test passed by diffing output
+      diff(
+          dockerCompiler,
+          containerId,
+          `${EXPECTED_OUTPUT_FILE_NAME_PREFIX}${testNumber}`,
+          `${ACTUAL_OUTPUT_FILE_NAME_PREFIX}${testNumber}`,
+          function (result) {
+        if (result.passed) {
+          testResult.status = 'pass';
+
+          var execTime = parseFloat(stdout);
+          totalExecTime += execTime;
+        } else {
+          testResult.status = 'fail';
+          testResult.differences = result.differences;
+          if (!firstErr) {
+            firstErr = { status: 'fail' };
+          }
+        }
+        onTestResult(testNumber, testResult);
+      });
     }
-    numTestsCompleted += 1;
-    if (numTestsCompleted === numTests) {
-      finalResult.passed = passed;
-      finalResult.totalExecTime = totalExecTime;
-      if (!passed) {
-        finalResult.results = testResults;
+
+    function onTestResult(testNumber, testResult) {
+      testResults[testNumber] = testResult;
+
+      numTestsCompleted += 1;
+      // If all tests have been ran
+      if (numTestsCompleted === numTests) {
+        if (firstErr) {
+          // Only include the test by test results if shouldReveal is set to true
+          if (dockerCompiler.shouldReveal) {
+            finalResult.status = firstErr.status;
+            finalResult.testResults = testResults;
+          } else {
+            finalResult = firstErr;
+          }
+        } else {
+          finalResult.status = 'pass';
+          finalResult.execTime = totalExecTime;
+        }
+        callback(finalResult);
       }
-      callback(finalResult);
     }
   }
 }
 
 /**
- * Calls back as `callback(err, stdout)`
- * Does not return the results of the tests.
- */
-function runTest(dockerCompiler, containerId, inputFilename, outputFilename, callback) {
-  var cmd = `docker exec ${containerId} bash -c`
-      + ` 'cd "${CONTAINER_USER_DIR}"`
-      + ` && "./${RUN_SCRIPT_NAME}" "${dockerCompiler.seconds}"`
-      + ` "${dockerCompiler.runtime}" "${inputFilename}" "${outputFilename}"'`;
-  exec(cmd, callback);
-};
-
-/**
  * Uses wdiff to compare two files in a container word by word.
  *
- * Calls back as `callback(results)`
- * Results is an array of objects with two properties each (example: [{expected: '0', actual: '1'}])
- * An empty array means there were no differences
+ * Calls back as `callback(result)`
+ *
+ * `result` is an object with two properties: `passed` (boolean) and `differences`.
+ *
+ * `differences` is an array of objects with two properties each (example:
+ * [{expected: '0', actual: '1'}]). An empty array means there were no differences.
  */
 function diff(dockerCompiler, containerId, expectedOutputFilename, actualOutputFilename, callback) {
   var fullStdout = '';
@@ -330,10 +360,10 @@ function diff(dockerCompiler, containerId, expectedOutputFilename, actualOutputF
   ];
   var childProcess = spawn(cmd, args);
   childProcess.on('error', function (err) {
-    console.log('sorry boss, there was an error diffing: ' + err);
+    console.error('sorry boss, there was an error diffing: ' + err);
   });
   childProcess.stderr.on('data', function (data) {
-    console.log('err received diffing: ' + data);
+    console.error('err received diffing: ' + data);
   });
   childProcess.stdout.on('data', function (data) {
     fullStdout += data;
@@ -343,7 +373,7 @@ function diff(dockerCompiler, containerId, expectedOutputFilename, actualOutputF
       var result = convertWdiffDataToObject(fullStdout);
       callback(result);
     } else {
-      console.log(`docker exec errored with exit code: ${exitCode}`);
+      console.error(`docker exec wdiff errored with exit code: ${exitCode}`);
     }
   });
 }
@@ -355,9 +385,9 @@ function convertWdiffDataToObject(wdiffData) {
   var result = {
     passed: !wdiffData
   };
-  var differences = [];
   if (wdiffData) {
     // Fail
+    var differences = [];
     var differentWords = wdiffData.split(DIFF_DELIMITER);
     differentWords.forEach(function (difference) {
       var expected = '';
