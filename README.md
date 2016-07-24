@@ -1,102 +1,117 @@
-# Capstone
+# Capstone API
 
-This is my capstone project.
+This is the compilation API for my capstone project.
 
-## TODO:
+Below are the details of the web API.
 
-## Diff options
+## Requests
 
-- Extend the api to send an array of input and output pairs
-- Iteratively redirect each input and diff each output
-- Either all tests pass or the solution is deemed incorrect.
+Requests should be sent to this API as a 'application/json' post with the following three properties:
+- "lang": A string specifying the language code of the source code. A full list can be found in
+  the properties of compilers.js.
+- "src": A string containing all of the source code.
+- "problem": The ID of the problem the solution is attempting to solve.
 
-- Strict
-  - Shows only pass or fail. No additional info is provided, including compilation and runtime errors.
-- Error reporting
-  - Shows pass or fail. Any compilation or runtime errors are sent back to the user.
-- Granular
-  - Shows the number of tests passing
-  - A simple report on each test will be sent back. Each test displays pass / fail.
-- Hinting
-  - Shows, for example, this test failed: expected: x, actual: x
-  - A specific report on each test will be sent back to the user. Each test displays pass / fail: expected: x, actual: x
-- Learning
-  - A progression over the bottom three stages following failed attempts
+JSON example:
 
-Check out:
-- KDiff3
-
-### Implementation Thoughts
-
-Separate docker exec statements for compile.sh, run.sh, and diff.sh
-
-Flow:
-```
-compile.sh
-  if errors
-    exit with info
-  else
-    for each test case i
-      run.sh _ input-i.txt actual-output-i.txt
-        if errors
-          exit with info
-    if all run.sh's succeed (no errors)
-      for each test case i
-        diff.sh expected-output-i.txt actual-output.txt some-specificity-option
-          report
-      report
-
-What the user sees:
---Compilation Error-------------------------------------------------------------
-Compilation Error:
-  __________
---Simple Pass Fail--------------------------------------------------------------
-Correct / Incorrect
-Runtime Error:
-  __________
---Number of Tests Passing-------------------------------------------------------
-Test 1/4:
-  Passed
-Test 2/4:
-  Failed
-Test 3/4:
-  Passed
-Test 4/4:
-  Runtime Error:
-    __________
---Specific----------------------------------------------------------------------
-
+```json
+{
+ "lang": "java",
+ "src": "import java.util.Scanner;\npublic class Solution {\n  public static void main(String[] args) {\n    Scanner scanner = new Scanner(System.in);\n    int x = scanner.nextInt();\n    int y = x * 2;\n    System.out.println(y);\n  }\n}\n",
+ "problem": "Double"
+}
 ```
 
-## Tests
+Example request using cURL:
 
-- On each language:
-  - Compiles and runs a properly written source file
-  - Responds with compilation errors
-  - Stdin is properly received
+`curl -d '{"lang": "c", "src": "#include <stdio.h>\n\nint main()\n{\n  printf(\"Hello, world!\");\n}"}' -H "Content-Type: application/json" http://localhost:8080/api`
 
-### Infinite Loops (pass)
+## Responses
 
-```
-curl -d '{"seconds": 3, "lang": "java", "src": "public class Solution { public static void main(String[] args) { while (true) { System.out.println(true); } } }' -H "Content-Type: application/json" http://172.17.0.2:8080/api
-```
+Responses are sent as JSON.
 
-### File Writing (pass)
+If the request was _incorrectly_ formatted, the JSON response will contain a single "error"
+property.
 
-```
-curl -d '{"seconds": 3, "lang": "java", "src": "import java.nio.file.*; public class Solution { public static void main(String[] args) { try{ while (true) { Files.write(Paths.get(\"hello.txt\"), new byte[1]); } } catch (Exception e) { e.printStackTrace(); } } }"}' -H "Content-Type: application/json" http://172.17.0.2:8080/api
+```json
+{
+  "error": "Requests must be sent as JSON containing at least 3 properties: lang, src, and problem."
+}
 ```
 
-### Flooding Output (pass)
+If the request was _correctly_ formatted, then the JSON response will depend on the problem's
+feedback level:
 
+### Simple Feedback Response
+
+Example responses:
+
+- Pass
+
+```json
+{
+  "status": "pass",
+  "execTime": 0.192401
+}
 ```
-curl -d '{"seconds": 3, "lang": "js", "src": "while (true) { console.log(0); }"}' -H "Content-Type: application/json" http://172.17.0.2:8080/api
+
+- Fail
+
+```json
+{
+  "status": "fail"
+}
 ```
 
-### Root level operations
+- Timeout
 
-### Bash Injection?
+```json
+{
+  "status": "timeout"
+}
+```
 
-### Creating & Running Other Programs
+- Error
 
-### Shutdown Request
+```json
+{
+  "status": "error",
+  "message": "solution.c: In function 'main':\nsolution.c:2:31: error: expected ';' before '}' token\n int main() { printf(\"233168\") }\n                               ^\n"
+}
+```
+
+### Revealing Feedback Response
+
+Revealing feedback gives feedback on a test-by-test basis. Each test will give an individual report
+of "pass", "fail", "timeout", or "error". In the case of a failed submission, a list of differences
+(i.e. expected: x, actual: x) will be given.
+
+- Pass
+
+```json
+{
+  "status": "pass",
+  "execTime": 0.192401
+}
+```
+
+- Fail
+
+```json
+{
+  "status": "fail",
+  "results": [ {
+    "status": "fail",
+    "differences": [ {
+      "expected":"2",
+      "actual":"3" } ]
+  }, {
+    "status": "error",
+    "message": [ {
+      "expected":"2",
+      "actual":"3" } ]
+  }, {
+    "status": "pass"
+  } ]
+}
+```
