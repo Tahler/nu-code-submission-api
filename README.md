@@ -50,7 +50,7 @@ Example responses:
 
 ```json
 {
-  "status": "pass",
+  "status": "Pass",
   "execTime": 0.192401
 }
 ```
@@ -59,7 +59,7 @@ Example responses:
 
 ```json
 {
-  "status": "fail"
+  "status": "Fail"
 }
 ```
 
@@ -67,16 +67,25 @@ Example responses:
 
 ```json
 {
-  "status": "timeout"
+  "status": "Timeout"
 }
 ```
 
-- Error
+- Compilation Error
 
 ```json
 {
-  "status": "error",
+  "status": "CompilationError",
   "message": "solution.c: In function 'main':\nsolution.c:2:31: error: expected ';' before '}' token\n int main() { printf(\"233168\") }\n                               ^\n"
+}
+```
+
+- Runtime Error
+
+```json
+{
+  "status": "RuntimeError",
+  "message": "Exception in thread \"main\" java.lang.RuntimeException\n	at Solution.main(Solution.java:3)"
 }
 ```
 
@@ -90,7 +99,7 @@ of "pass", "fail", "timeout", or "error". In the case of a failed submission, a 
 
 ```json
 {
-  "status": "pass",
+  "status": "Pass",
   "execTime": 0.192401
 }
 ```
@@ -99,20 +108,20 @@ of "pass", "fail", "timeout", or "error". In the case of a failed submission, a 
 
 ```json
 {
-  "status": "fail",
+  "status": "Fail",
   "results": [ {
-    "status": "fail",
+    "status": "Fail",
     "differences": [ {
       "expected":"2",
       "actual":"3"
     } ]
   }, {
-    "status": "error",
+    "status": "RuntimeError",
     "message": "stack overflow or something"
   }, {
-    "status": "timeout"
+    "status": "Timeout"
   }, {
-    "status": "pass"
+    "status": "Pass"
   } ]
 }
 ```

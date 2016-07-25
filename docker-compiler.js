@@ -62,7 +62,8 @@ DockerCompiler.prototype.run = function (callback) {
           compile(dockerCompiler, containerId, function (err, stdout) {
             if (err) {
               callback({
-                error: err
+                status: 'CompilationError',
+                message: err
               });
             } else {
               // TODO: duplicate code
@@ -279,10 +280,10 @@ function runAllTests(dockerCompiler, containerId, callback) {
     if (err) {
       if (err.code === TIMEOUT_CODE) {
         // Err because timeout
-        testResult.status = 'timeout';
+        testResult.status = 'Timeout';
       } else {
         // Err because runtime error
-        testResult.status = 'error';
+        testResult.status = 'RuntimeError';
         testResult.message = stdout;
       }
       if (!firstErr) {
@@ -298,15 +299,15 @@ function runAllTests(dockerCompiler, containerId, callback) {
           `${ACTUAL_OUTPUT_FILE_NAME_PREFIX}${testNumber}`,
           function (result) {
         if (result.passed) {
-          testResult.status = 'pass';
+          testResult.status = 'Pass';
 
           var execTime = parseFloat(stdout);
           totalExecTime += execTime;
         } else {
-          testResult.status = 'fail';
+          testResult.status = 'Fail';
           testResult.differences = result.differences;
           if (!firstErr) {
-            firstErr = { status: 'fail' };
+            firstErr = { status: 'Fail' };
           }
         }
         onTestResult(testNumber, testResult);
@@ -328,7 +329,7 @@ function runAllTests(dockerCompiler, containerId, callback) {
             finalResult = firstErr;
           }
         } else {
-          finalResult.status = 'pass';
+          finalResult.status = 'Pass';
           finalResult.execTime = totalExecTime;
         }
         callback(finalResult);
