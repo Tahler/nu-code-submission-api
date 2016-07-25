@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # $NAME must match $NAME in start-webserver.sh
-NAME=web
+NAME=api
 
-docker kill web
-docker rm web
+docker kill $NAME
+docker rm $NAME
