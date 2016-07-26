@@ -42,7 +42,7 @@ property.
 If the request was _correctly_ formatted, then the JSON response will depend on the problem's
 feedback level:
 
-### Simple Feedback Response
+### Feedback Response
 
 Example responses:
 
@@ -60,6 +60,17 @@ Example responses:
 ```json
 {
   "status": "Fail"
+}
+```
+
+- Fail with Hints
+
+```json
+{
+  "status": "Fail",
+  "hints": [
+    "Account for dividing by 0."
+  ]
 }
 ```
 
@@ -86,42 +97,5 @@ Example responses:
 {
   "status": "RuntimeError",
   "message": "Exception in thread \"main\" java.lang.RuntimeException\n	at Solution.main(Solution.java:3)"
-}
-```
-
-### Revealing Feedback Response
-
-Revealing feedback gives feedback on a test-by-test basis. Each test will give an individual report
-of "pass", "fail", "timeout", or "error". In the case of a failed submission, a list of differences
-(i.e. expected: x, actual: x) will be given.
-
-- Pass
-
-```json
-{
-  "status": "Pass",
-  "execTime": 0.192401
-}
-```
-
-- Fail
-
-```json
-{
-  "status": "Fail",
-  "results": [ {
-    "status": "Fail",
-    "differences": [ {
-      "expected":"2",
-      "actual":"3"
-    } ]
-  }, {
-    "status": "RuntimeError",
-    "message": "stack overflow or something"
-  }, {
-    "status": "Timeout"
-  }, {
-    "status": "Pass"
-  } ]
 }
 ```
