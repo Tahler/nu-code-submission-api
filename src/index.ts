@@ -7,7 +7,7 @@ import { Firebase } from './firebase';
 import { HttpStatusCodes } from './http-status-codes';
 import { Request } from './request';
 import { Runner } from './runner';
-import { SupportedLanguages, langIsSupported } from './supported-languages';
+import { langIsSupported } from './supported-languages';
 
 const Port = 8080;
 
@@ -44,12 +44,6 @@ app.post('/api', jsonParser, (req, res) => {
   } else {
     res.status(400).send(new InvalidRequestError(request));
   }
-    // function runInDocker() {
-    //   var dockerCompiler = new DockerCompiler(lang, code, seconds, tests);
-    //   dockerCompiler.run(function (result) {
-    //     res.status(200).send(result);
-    //   });
-    // }
 });
 
 function handleRequest(request: Request, res: express.Response) {
@@ -57,14 +51,13 @@ function handleRequest(request: Request, res: express.Response) {
   let src = request.src;
   let problemId = request.problem;
   // Load the timeout and test cases asynchronously
-  let timeout, tests;
   Promise.all([
     Firebase.get(`/problems/${problemId}/timeout`),
     Firebase.get(`/tests/${problemId}`)
   ]).then(
     values => {
-      timeout = values[0];
-      tests = values[1];
+      let timeout = values[0];
+      let tests = values[1];
 
       // Ready to execute code
       let runner = new Runner(lang, src, timeout, tests);

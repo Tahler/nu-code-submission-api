@@ -9,7 +9,8 @@ export class LanguageUnsupportedError implements Error {
 
   constructor(requestedLang: string) {
     this.error = `Language ${requestedLang} is not supported.`
-        + ' See a list of supported compilers here: https://github.com/Tahler/capstone-api/blob/master/supported-languages.md'
+        + ` See a list of supported compilers here:`
+        + ` https://github.com/Tahler/capstone-api/blob/master/supported-languages.md`;
   }
 }
 

@@ -15,6 +15,11 @@ export const SupportedLanguages: SupportedLanguages = {
     filename: 'solution.cpp',
     runtime: './a.out'
   },
+  csharp: {
+    compiler: 'mcs',
+    filename: 'solution.cs',
+    runtime: 'mono solution.exe'
+  },
   java: {
     compiler: 'javac',
     filename: 'Solution.java',
@@ -23,11 +28,6 @@ export const SupportedLanguages: SupportedLanguages = {
   js: {
     filename: 'solution.js',
     runtime: 'nodejs solution.js'
-  },
-  csharp: {
-    compiler: 'mcs',
-    filename: 'solution.cs',
-    runtime: 'mono solution.exe'
   },
   python: {
     filename: 'solution.py',

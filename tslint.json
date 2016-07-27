@@ -37,6 +37,7 @@
       "variables-before-functions"
     ],
     "no-consecutive-blank-lines": true,
+    "no-namespace": false,
     "no-shadowed-variable": false,
     "no-switch-case-fall-through": true,
     "no-unused-expression": true,

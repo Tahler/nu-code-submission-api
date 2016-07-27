@@ -13,78 +13,98 @@ export class DockerContainer {
   constructor(private image: string) { }
 
   start(): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<void>((resolve, reject) =>
       this.runCmd(`docker run -d -i ${this.image}`).then(
-        stdout => {
-          // Initialize container id to output from docker
-          this.containerId = stdout.trim();
-          // Initialize currentDirectory with pwd
-          return this.runCmd(`docker exec ${this.containerId} pwd`).then(
-            stdout => {
-              this.currentDirectory = stdout.trim();
-              resolve(Promise.resolve());
-            });
-        },
-        err => reject(err)
-      );
-    });
+        output => {
+          if (output.err) {
+            reject(output.err);
+          } else {
+            // Initialize container id to output from docker
+            this.containerId = output.stdout.trim();
+            // Initialize currentDirectory with pwd
+            return this.runCmd(`docker exec ${this.containerId} pwd`).then(
+              output => {
+                if (output.err) {
+                  reject(output.err);
+                } else {
+                  this.currentDirectory = output.stdout.trim();
+                  resolve(Promise.resolve());
+                }
+              });
+          }
+        }));
   }
 
   cleanup(): Promise<void> {
-    return this.runCmd(`docker kill ${this.containerId}`).then(
-      () => {
-        this.runCmd(`docker rm ${this.containerId}`).then(
-          () => {
-            return Promise.resolve();
+    return new Promise<void>((resolve, reject) =>
+      this.runCmd(`docker kill ${this.containerId}`).then(
+        output => {
+          if (output.err) {
+            reject(output.err);
+          } else {
+            this.runCmd(`docker rm ${this.containerId}`).then(
+              output => {
+                if (output.err) {
+                  reject(output.err);
+                } else {
+                  resolve();
+                }
+              });
           }
-        );
-      }
-    );
+        }));
   }
 
   changeDirectory(dir: string): Promise<void> {
-    return this.runCmd(`docker exec ${this.containerId} sh -c cd ${dir}`).then(
-      () => {
-        this.currentDirectory = dir;
-        return Promise.resolve();
-      }
-    );
+    return new Promise<void>((resolve, reject) =>
+      this.runCmd(`docker exec ${this.containerId} sh -c cd ${dir}`).then(
+        output => {
+          if (output.err) {
+            reject(output.err);
+          } else {
+            this.currentDirectory = dir;
+            resolve();
+          }
+        }));
   }
 
   mkdirInContainer(dirName: string): Promise<void> {
-    return this.runCmd(`docker exec ${this.containerId} mkdir -p ${dirName}`).then(
-      stdout => {
-        this.containerId = stdout;
-        return Promise.resolve();;
-      }
-    );
+    return new Promise<void>((resolve, reject) =>
+      this.runCmd(`docker exec ${this.containerId} mkdir -p ${dirName}`).then(
+        output => {
+          if (output.err) {
+            reject(output.err);
+          } else {
+            this.containerId = output.stdout;
+            resolve();
+          }
+        }));
   }
 
-  copyFile(srcPath: string, destPathInContainer: string): Promise<string> {
-    return this.runCmd(
-      `cat ${srcPath} | docker exec -i ${this.containerId} sh -c 'cat > ${destPathInContainer}'`);
-  }
-
-  makeFileExecutable(pathToFileInContainer: string): Promise<string> {
-    return this.runCmd(`docker exec ${this.containerId} chmod a+rwx ${pathToFileInContainer}`);
-  }
-
-  copyExecutable(pathToExecutable: string, destPathInContainer: string): Promise<string> {
-    return this.copyFile(pathToExecutable, destPathInContainer)
-      .then(() => this.makeFileExecutable(destPathInContainer));
+  copyFile(srcPath: string, destPathInContainer: string): Promise<void> {
+    let copyCmd =
+      `cat ${srcPath} | docker exec -i ${this.containerId} sh -c 'cat > ${destPathInContainer}'`;
+    return new Promise<void>((resolve, reject) =>
+      this.runCmd(copyCmd).then(
+        output => {
+          if (output.err) {
+            reject(output.err);
+          } else {
+            resolve();
+          }
+        }));
   }
 
   writeFile(contents: string, destPathInContainer: string): Promise<void> {
     // This is actually impossible (or at least too complicated).
     // The alternative: create an intermediate file, copy it over, then remove the file
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<void>((resolve, reject) =>
       // Create the tmp filename
       tmp.tmpName((err, tmpFilename) => {
         if (err) {
           reject(err);
         } else {
           // Write the data to the tmp file
-          fs.writeFile(tmpFilename, contents, (err) => {
+          fs.writeFile(tmpFilename, contents, err => {
             if (err) {
               reject(err);
             } else {
@@ -103,20 +123,28 @@ export class DockerContainer {
                 err => {
                   reject(err);
                   cleanup();
-                }
-              );
+                });
             }
           });
         }
-      });
-    });
+      }));
+  }
+
+  /**
+   * The script lives on the host, NOT the container.
+   */
+  runScript(scriptType: string = 'bash',
+            pathToScriptInHost: string,
+            args: string[]): Promise<Output> {
+    let argsFmt = args.map(arg => `"${arg}"`).join(' ');
+    return this.runCmd(`cat ${pathToScriptInHost} | docker exec -i ${scriptType} -s ${argsFmt}`);
   }
 
   /**
    * Uses wdiff to compare two files in a container word by word. Wdiff ignores whitespace
    * differences.
    */
-  filesAreDifferent(pathToFileA: string, pathToFileB: string): Promise<boolean> {
+  filesAreIdentical(pathToFileA: string, pathToFileB: string): Promise<boolean> {
     let cmd = 'docker';
     let args = [
       'exec',
@@ -148,17 +176,14 @@ export class DockerContainer {
   /**
    * Returns a promise containing the stdout of the ran command.
    */
-  private runCmd(cmd: string): Promise<string> {
-    return new Promise<string>((resolve, reject) => {
-      exec(cmd, (err, stdout, stderr) => {
-        if (err) {
-          reject(err);
-        } else if (stderr) {
-          reject(stderr);
-        } else {
-          resolve(stdout);
-        }
-      });
-    });
+  private runCmd(cmd: string): Promise<Output> {
+    return new Promise<Output>(resolve =>
+      exec(cmd, (err, stdout, stderr) => resolve({err, stdout, stderr})));
   }
+}
+
+interface Output {
+  err: Error;
+  stdout: string;
+  stderr: string;
 }
