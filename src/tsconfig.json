@@ -1,10 +1,12 @@
 {
   "compilerOptions": {
+    "outDir": "../out",
     "module": "commonjs",
     "removeComments": true,
     "sourceMap": true
   },
   "files": [
-    "./typings.d.ts"
+    "./typings.d.ts",
+    "./app/index.ts"
   ]
 }

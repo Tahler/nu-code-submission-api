@@ -41,3 +41,6 @@ jspm_packages
 
 # Typings is reproducible via typings.json
 typings/
+
+# The transpiled JavaScript files
+out/
