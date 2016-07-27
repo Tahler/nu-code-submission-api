@@ -4,7 +4,7 @@
  * Each property creates another supported language.
  * Thus, to support a new language, adding to this file should be the only necessary step.
  */
-export const SupportedCompilers = {
+export const Compilers = {
   c: {
     compiler: 'gcc',
     filename: 'solution.c',
@@ -37,4 +37,8 @@ export const SupportedCompilers = {
     filename: 'solution.py',
     runtime: 'python3.5 solution.py'
   }
+};
+
+export function langIsSupported(lang: string): boolean {
+  return Compilers.hasOwnProperty(lang);
 };
