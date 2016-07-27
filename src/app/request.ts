@@ -1,3 +1,9 @@
+export const RequiredProperties: string[] = [
+  'lang',
+  'src',
+  'problem'
+];
+
 export interface Request {
   lang: string;
   src: string;
@@ -5,10 +11,13 @@ export interface Request {
 }
 
 export namespace Request {
-  /**
-   * Returns true if `obj` adheres to the Request interface.
-   */
-  export function isValid(obj: any): boolean {
-    return obj.lang && obj.src && obj.problem;
+  export function hasRequiredProperties(obj: any): boolean {
+    let hasRequiredProperties = true;
+    RequiredProperties.forEach(requiredProperty => {
+      if (!obj.hasOwnProperty(requiredProperty)) {
+        hasRequiredProperties = false;
+      }
+    });
+    return hasRequiredProperties;
   }
 }
