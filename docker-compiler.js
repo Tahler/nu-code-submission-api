@@ -57,6 +57,7 @@ DockerCompiler.prototype.run = function (callback) {
     createNeededFilesInContainer(dockerCompiler, containerId, function (err) {
       if (err) {
         console.error('error copying files to container:\n' + err);
+        cleanup(containerId);
       } else {
         if (dockerCompiler.isCompiled()) {
           compile(dockerCompiler, containerId, function (err, stdout) {
@@ -65,6 +66,7 @@ DockerCompiler.prototype.run = function (callback) {
                 status: 'CompilationError',
                 message: err
               });
+              cleanup(containerId);
             } else {
               // TODO: duplicate code
               runAllTests(dockerCompiler, containerId, function (result) {
