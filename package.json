@@ -19,6 +19,7 @@
   "homepage": "https://gitlab.com/salmonman808/capstone#README",
   "dependencies": {
     "body-parser": "^1.15.1",
+    "es6-promise": "^3.2.1",
     "express": "^4.13.4",
     "firebase": "^3.2.0",
     "rxjs": "^5.0.0-beta.10",
