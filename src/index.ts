@@ -1,6 +1,8 @@
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
+import { Promise } from 'es6-promise';
 
+import { Firebase } from './firebase';
 import { Request } from './request';
 import { Compilers, langIsSupported } from './supported-compilers';
 import { HttpStatusCodes } from './http-status-codes';
@@ -30,11 +32,11 @@ app.use((req, res, next) => {
  * https://github.com/Tahler/capstone-api/README.md
  */
 app.post('/api', jsonParser, (req, res) => {
-  let request: Request = req.body;
+  let request = req.body;
   if (Request.hasRequiredProperties(request)) {
     let lang = request.lang;
     if (langIsSupported(request.lang)) {
-      handleRequest(request);
+      handleRequest(request, res);
     } else {
       res.status(400).send(new LanguageUnsupportedError(lang));
     }
@@ -49,8 +51,29 @@ app.post('/api', jsonParser, (req, res) => {
     // }
 });
 
-function handleRequest(request: Request) {
-
+function handleRequest(request: Request, res: express.Response) {
+  let lang = request.lang;
+  let src = request.src;
+  let problemId = request.problem;
+  // Load the timeout and test cases asynchronously
+  let timeout, tests;
+  Promise.all([
+    Firebase.get(`/problems/${problemId}/timeout`),
+    Firebase.get(`/tests/${problemId}`)
+  ]).then(
+    values => {
+      timeout = values[0];
+      tests = values[1];
+      res.status(HttpStatusCodes.Success).send(`timeout: ${timeout}, tests: ${tests}`);
+      // TODO: continue onto docker!
+    },
+    err => {
+      console.error(err);
+      res.status(HttpStatusCodes.ServerError).send({
+        message: 'The server ran into an unexpected error.'
+      });
+    }
+  );
 }
 
 app.listen(Port, () => console.log(`Listening on port ${Port}`));

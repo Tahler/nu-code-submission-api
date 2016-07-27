@@ -1,25 +1,37 @@
 import * as firebase from 'firebase';
-import { Observable } from 'rxjs';
+import { Promise } from 'es6-promise';
 
-const ServiceCredentialsPath = '../credentials/nu-code-server.json';
+// TODO: Relative to where Node is run from
+const ServiceCredentialsPath = './credentials/server-credentials.json';
 const DatabaseUrl = 'https://nu-code-350ea.firebaseio.com';
 const ServiceUid = 'compilation-api';
 
 firebase.initializeApp({
-  serviceAccount: ServiceCredentialsPath,
   databaseURL: DatabaseUrl,
   databaseAuthVariableOverride: {
     uid: ServiceUid
-  }
+  },
+  serviceAccount: ServiceCredentialsPath
 });
 
 let database = firebase.database();
 
 export namespace Firebase {
-  // TODO: needs testing
-  export function get(path: string): Observable<any> {
-    let firebasePromise = database.ref(path).once('value');
-    return Observable.fromPromise(firebasePromise);
+  // TODO: needs testing, both get and non-existent
+  export function get(path: string): Promise<any> {
+    return new Promise<any>((resolve, reject) => {
+        database.ref(path).once('value').then(
+            snapshot => {
+              if (snapshot.exists()) {
+                resolve(snapshot.val());
+              } else {
+                reject(`${path} does not exist.`);
+              }
+            },
+            // Pass on the error to the caller
+            err => reject(err)
+        );
+    });
   }
 }
 
