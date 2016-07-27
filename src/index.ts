@@ -4,7 +4,7 @@ import { Promise } from 'es6-promise';
 
 import { Firebase } from './firebase';
 import { Request } from './request';
-import { Compilers, langIsSupported } from './supported-compilers';
+import { SupportedLanguages, langIsSupported } from './supported-languages';
 import { HttpStatusCodes } from './http-status-codes';
 import { InvalidRequestError, LanguageUnsupportedError } from './errors';
 

@@ -4,7 +4,7 @@
  * Each property creates another supported language.
  * Thus, to support a new language, adding to this file should be the only necessary step.
  */
-export const Compilers = {
+export const SupportedLanguages: SupportedLanguages = {
   c: {
     compiler: 'gcc',
     filename: 'solution.c',
@@ -40,5 +40,16 @@ export const Compilers = {
 };
 
 export function langIsSupported(lang: string): boolean {
-  return Compilers.hasOwnProperty(lang);
+  return SupportedLanguages.hasOwnProperty(lang);
 };
+
+// Implementing type-safety
+interface SupportedLanguage {
+  compiler?: string;
+  filename: string;
+  runtime: string;
+}
+
+interface SupportedLanguages {
+  [code: string]: SupportedLanguage;
+}
