@@ -1,12 +1,13 @@
-import * as express from 'express';
 import * as bodyParser from 'body-parser';
 import { Promise } from 'es6-promise';
+import * as express from 'express';
 
-import { Firebase } from './firebase';
-import { Request } from './request';
-import { SupportedLanguages, langIsSupported } from './supported-languages';
-import { HttpStatusCodes } from './http-status-codes';
 import { InvalidRequestError, LanguageUnsupportedError } from './errors';
+import { Firebase } from './firebase';
+import { HttpStatusCodes } from './http-status-codes';
+import { Request } from './request';
+import { Runner } from './runner';
+import { SupportedLanguages, langIsSupported } from './supported-languages';
 
 const Port = 8080;
 
@@ -17,15 +18,15 @@ let jsonParser = bodyParser.json();
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization, Content-Length, X-Requested-With');
   if ('OPTIONS' === req.method) {
     res.sendStatus(HttpStatusCodes.Success);
   } else {
     next();
   }
 });
-
-// var DockerCompiler = require('./docker-compiler');
 
 /**
  * See documentation on usage here:
@@ -64,8 +65,18 @@ function handleRequest(request: Request, res: express.Response) {
     values => {
       timeout = values[0];
       tests = values[1];
-      res.status(HttpStatusCodes.Success).send(`timeout: ${timeout}, tests: ${tests}`);
-      // TODO: continue onto docker!
+
+      // Ready to execute code
+      let runner = new Runner(lang, src, timeout, tests);
+      runner.run().then(
+        result => {
+          console.log('code finished');
+          res.send(HttpStatusCodes.Success).send(result);
+        },
+        err => {
+          console.log('bummer');
+          console.log(err);
+        });
     },
     err => {
       console.error(err);
