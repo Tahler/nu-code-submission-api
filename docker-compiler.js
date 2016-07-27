@@ -10,6 +10,7 @@ var compilers = require('./supported-compilers');
 // constants
 var DOCKER_IMAGE = 'compiler';
 var CONTAINER_USER_DIR = '/user-files';
+var CONTAINER_USER_DIR = `${CONTAINER_USER_DIR}/user-workspace`;
 var COMPILE_SCRIPT_NAME = 'compile.sh';
 var RUN_SCRIPT_NAME = 'run.sh';
 var DIFF_SCRIPT_NAME = 'diff.sh';
@@ -22,13 +23,12 @@ var DIFF_EXPECTED_REGEX = '';
 var DIFF_ACTUAL_REGEX = '';
 var DIFF_DELIMITER = '======================================================================';
 
-var DockerCompiler = function (lang, code, seconds, tests, shouldReveal) {
+var DockerCompiler = function (lang, code, seconds, tests) {
   if (compilers.hasOwnProperty(lang)) {
     this.lang = lang;
     this.code = code;
     this.seconds = seconds;
     this.tests = tests;
-    this.shouldReveal = shouldReveal;
 
     var params = compilers[lang];
     this.compiler = params.compiler || '';
@@ -159,14 +159,12 @@ function createNeededFilesInContainer(dockerCompiler, containerId, callback) {
     var numTestsCopied = 0;
     testCases.forEach(function(testCase, i) {
       var input = testCase.input;
-      var output = testCase.output;
       var inputSuccess = false;
-      var outputSuccess = false;
 
       function sync(err) {
         if (err) {
           done(err);
-        } else if (inputSuccess && outputSuccess) {
+        } else if (inputSuccess) {
           numTestsCopied += 1;
           if (numTestsCopied === numTests) {
             testCasesWritten = true;
@@ -181,17 +179,6 @@ function createNeededFilesInContainer(dockerCompiler, containerId, callback) {
           function (err) {
         if (!err) {
           inputSuccess = true;
-        }
-        sync(err);
-      });
-
-      writeFileToContainer(
-          output,
-          containerId,
-          `${CONTAINER_USER_DIR}/${EXPECTED_OUTPUT_FILE_NAME_PREFIX}${i}`,
-          function (err) {
-        if (!err) {
-          outputSuccess = true;
         }
         sync(err);
       });
@@ -243,7 +230,7 @@ function compile(dockerCompiler, containerId, callback) {
 }
 
 /**
- * Calls back as `callback(testNumber, err, stdout)` where `stdout` is the output of run.sh
+ * Calls back as `callback(err, stdout)` where `stdout` is the output of run.sh
  * Does not return the results of the tests.
  */
 function runTest(dockerCompiler, containerId, testNumber, callback) {
@@ -263,16 +250,18 @@ function runTest(dockerCompiler, containerId, testNumber, callback) {
  * Calls back as `callback(finalResult)`
  */
 function runAllTests(dockerCompiler, containerId, callback) {
-  var finalResult = {};
-  var testResults = [];
+  var finalResult = { status: 'Pass' };
+  var hints = [];
   var totalExecTime = 0;
-  var firstErr;
 
   var numTests =  dockerCompiler.tests.length;
   var numTestsCompleted = 0;
 
   for (var i = 0; i < numTests; i++) {
-    runTest(dockerCompiler, containerId, i, onTestFinished);
+    // cannot use `i` in closure
+    runTest(dockerCompiler, containerId, i, function (testNumber, err, stdout) {
+      onTestFinished(testNumber, err, stdout);
+    });
   }
 
   function onTestFinished(testNumber, err, stdout) {
@@ -286,50 +275,59 @@ function runAllTests(dockerCompiler, containerId, callback) {
         testResult.status = 'RuntimeError';
         testResult.message = stdout;
       }
-      if (!firstErr) {
-        firstErr = testResult;
-      }
       onTestResult(testNumber, testResult);
     } else {
       // See if the test passed by diffing output
-      diff(
-          dockerCompiler,
+      var test = dockerCompiler.tests[testNumber];
+      var output = test.output;
+      writeFileToContainer(
+          output,
           containerId,
-          `${EXPECTED_OUTPUT_FILE_NAME_PREFIX}${testNumber}`,
-          `${ACTUAL_OUTPUT_FILE_NAME_PREFIX}${testNumber}`,
-          function (result) {
-        if (result.passed) {
-          testResult.status = 'Pass';
-
-          var execTime = parseFloat(stdout);
-          totalExecTime += execTime;
+          `${CONTAINER_USER_DIR}/${EXPECTED_OUTPUT_FILE_NAME_PREFIX}${testNumber}`,
+          function (err) {
+        if (err) {
+          console.error('Error copying expected output file to container.');
         } else {
-          testResult.status = 'Fail';
-          testResult.differences = result.differences;
-          if (!firstErr) {
-            firstErr = { status: 'Fail' };
-          }
+          diff(
+              dockerCompiler,
+              containerId,
+              `${EXPECTED_OUTPUT_FILE_NAME_PREFIX}${testNumber}`,
+              `${ACTUAL_OUTPUT_FILE_NAME_PREFIX}${testNumber}`,
+              function (filesAreIdentical) {
+            if (filesAreIdentical) {
+              testResult.status = 'Pass';
+              testResult.execTime = parseFloat(stdout);
+            } else {
+              testResult.status = 'Fail';
+              if (test.hint) {
+                testResult.hint = test.hint;
+              }
+            }
+            onTestResult(testNumber, testResult);
+          });
         }
-        onTestResult(testNumber, testResult);
       });
     }
 
     function onTestResult(testNumber, testResult) {
-      testResults[testNumber] = testResult;
+      if (testResult.status === 'Pass') {
+        totalExecTime += testResult.execTime;
+      } else if (finalResult.status === 'Pass') {
+        // The final status is the first non-passing status
+        finalResult.status = testResult.status;
+        finalResult.message = testResult.message;
+      }
+      if (testResult.hint) {
+        hints.push(testResult.hint);
+      }
 
       numTestsCompleted += 1;
-      // If all tests have been ran
+      // If all tests have finished
       if (numTestsCompleted === numTests) {
-        if (firstErr) {
-          // Only include the test by test results if shouldReveal is set to true
-          if (dockerCompiler.shouldReveal) {
-            finalResult.status = firstErr.status;
-            finalResult.testResults = testResults;
-          } else {
-            finalResult = firstErr;
-          }
-        } else {
-          finalResult.status = 'Pass';
+        if (hints.length) {
+          finalResult.hints = hints;
+        }
+        if (finalResult.status === 'Pass') {
           finalResult.execTime = totalExecTime;
         }
         callback(finalResult);
@@ -339,17 +337,13 @@ function runAllTests(dockerCompiler, containerId, callback) {
 }
 
 /**
- * Uses wdiff to compare two files in a container word by word.
+ * Uses wdiff to compare two files in a container word by word. Wdiff ignores whitespace
+ * differences.
  *
- * Calls back as `callback(result)`
- *
- * `result` is an object with two properties: `passed` (boolean) and `differences`.
- *
- * `differences` is an array of objects with two properties each (example:
- * [{expected: '0', actual: '1'}]). An empty array means there were no differences.
+ * Calls back as `callback(filesAreIdentical)`
  */
 function diff(dockerCompiler, containerId, expectedOutputFilename, actualOutputFilename, callback) {
-  var fullStdout = '';
+  var filesAreIdentical = true;
   var cmd = 'docker';
   var args = [
     'exec',
@@ -363,52 +357,17 @@ function diff(dockerCompiler, containerId, expectedOutputFilename, actualOutputF
   childProcess.on('error', function (err) {
     console.error('sorry boss, there was an error diffing: ' + err);
   });
-  childProcess.stderr.on('data', function (data) {
-    console.error('err received diffing: ' + data);
-  });
   childProcess.stdout.on('data', function (data) {
-    fullStdout += data;
+    // If wdiff returns any data, then the files are different in some way.
+    filesAreIdentical = false;
   });
   childProcess.on('close', function (exitCode) {
     if (exitCode == 0) {
-      var result = convertWdiffDataToObject(fullStdout);
-      callback(result);
+      callback(filesAreIdentical);
     } else {
       console.error(`docker exec wdiff errored with exit code: ${exitCode}`);
     }
   });
-}
-
-/**
- * Returns an object with two properties: `passed` (boolean) and `differences` (array of objects).
- */
-function convertWdiffDataToObject(wdiffData) {
-  var result = {
-    passed: !wdiffData
-  };
-  if (wdiffData) {
-    // Fail
-    var differences = [];
-    var differentWords = wdiffData.split(DIFF_DELIMITER);
-    differentWords.forEach(function (difference) {
-      var expected = '';
-      var actual = '';
-      var expectedMatches = difference.match(/\[-(.*)-\]/);
-      if (expectedMatches) {
-        expected = expectedMatches[1];
-      }
-      var actualMatches = difference.match(/{\+(.*)\+}/);
-      if (actualMatches) {
-        actual = actualMatches[1];
-      }
-      differences.push({
-        expected: expected,
-        actual: actual,
-      });
-    });
-    result.differences = differences;
-  }
-  return result;
 }
 
 /**

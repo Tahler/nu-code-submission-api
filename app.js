@@ -109,15 +109,15 @@ app.post('/api', jsonParser, function (req, res) {
     var problemId = jsonReq[ProblemProperty];
 
     // Loaded asynchronously from firebase
-    var seconds, shouldReveal, tests;
+    var seconds;
+    var tests;
     // Set to true in case of errors in order to stop from sending errors back to the user twice
     var errorsOccurred = false;
 
     // Get problem info
-    loadFromFirebase(`/problems/${problemId}`, function (err, problem) {
+    loadFromFirebase(`/problems/${problemId}/timeout`, function (err, timeout) {
       if (!err) {
-        seconds = problem.timeout;
-        shouldReveal = problem.feedback.toLowerCase() === 'revealing';
+        seconds = timeout;
       }
       onDataLoad(err);
     });
@@ -133,13 +133,13 @@ app.post('/api', jsonParser, function (req, res) {
       if (err && !errorsOccurred) {
         errorsOccurred = true;
         res.status(500).send({ error: err });
-      } else if (seconds !== undefined && shouldReveal !== undefined && tests !== undefined) {
+      } else if (seconds !== undefined && tests !== undefined) {
         runInDocker();
       }
     }
 
     function runInDocker() {
-      var dockerCompiler = new DockerCompiler(lang, code, seconds, tests, shouldReveal);
+      var dockerCompiler = new DockerCompiler(lang, code, seconds, tests);
       dockerCompiler.run(function (result) {
         res.status(200).send(result);
       });
