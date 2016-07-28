@@ -95,8 +95,6 @@ export class DockerContainer {
   }
 
   writeFile(contents: string, destPathInContainer: string): Promise<void> {
-    console.log('writing file' + destPathInContainer);
-
     // This is actually impossible (or at least too complicated).
     // The alternative: create an intermediate file, copy it over, then remove the file
     return new Promise<void>((resolve, reject) =>
@@ -136,8 +134,6 @@ export class DockerContainer {
    * The script lives on the host, NOT the container.
    */
   runScript(scriptType: string = 'bash', localScriptPath: string, args: string[]): Promise<Output> {
-    console.log('running script ' + localScriptPath);
-
     let argsFmt = args.map(arg => `"${arg}"`).join(' ');
     // TODO: this will cause the docker error if I need it for testing
     // return this.runCmd(`cat ${localScriptPath} | docker exec -i ${scriptType} -s ${argsFmt}`);
@@ -160,23 +156,18 @@ export class DockerContainer {
     ];
     // TODO: clean this up
     return new Promise<boolean>((resolve, reject) => {
-      console.log('diffing files');
       let childProcess = spawn(cmd, args);
       childProcess.on('error', err => {
-        console.log('err: ' + err);
         reject(err);
       });
       childProcess.stdout.on('data', data => {
-        console.log('diff: ' + data);
         // If wdiff returns any data, then the files are different in some way.
         resolve(false);
       });
       childProcess.stderr.on('data', data => {
-        console.log('stderr: ' + data);
         reject(data);
       });
       childProcess.on('close', exitCode => {
-        console.log('done: ' + exitCode);
         if (exitCode === 0) {
           resolve(true);
         } else {

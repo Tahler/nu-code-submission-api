@@ -24,7 +24,7 @@ export class InvalidRequestError implements Error {
         .join(', ');
     this.error = 'Requests must be sent as JSON containing 3 properties: "lang",'
       + ` "src", and "problem". Missing properties: ${formattedMissingProperties}.`
-      + ` For more details, visit https://github.com/Tahler/capstone-api/blob/master/README.md.`
+      + ` For more details, visit https://github.com/Tahler/capstone-api/blob/master/README.md.`;
   }
 
   private static findMissingProperties(invalidRequest: any): string[] {
@@ -37,3 +37,7 @@ export class InvalidRequestError implements Error {
     return missingProperties;
   }
 }
+
+export const UnexpectedError: Error = {
+  error: 'The server ran into an unexpected error.'
+};

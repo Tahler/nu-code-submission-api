@@ -40,8 +40,6 @@ export class Runner {
   }
 
   run(): Promise<FinalResult> {
-    console.log('running');
-
     // Start the container
     return this.startContainer().then(
       // Copy necessary files
@@ -58,11 +56,7 @@ export class Runner {
         // Switch to the directory the user's code will run in
         () => container.changeDirectory(ContainerUserDir).then(
           // TODO: double check that an err goes to the cleanup section
-          () => {
-            console.log('changed dir');
-
-            resolve(container);
-          },
+          () => resolve(container),
           err => {
             reject(err);
             console.error('Error changing directory: ' + err);
@@ -85,10 +79,7 @@ export class Runner {
     return new Promise<FinalResult>((resolve, reject) =>
       this.compileIfNecessary(container).then(
         result => {
-          console.log('compileIfNecessary resolved');
-
           if (result.success) {
-            console.log('compiled');
             resolve(this.runAllTests(container));
           } else {
             resolve({
@@ -113,7 +104,7 @@ export class Runner {
             let err: any = output.err;
             // TODO: clean this up into one return / one if resolve else rejects
             if (err) {
-              if (err.code === 127) {
+              if (err.code === CompilationErrorCode) {
                 resolve({
                   success: false,
                   message: output.stderr
@@ -138,22 +129,14 @@ export class Runner {
         // Write test input to the container
         container.writeFile(test.input, `${InputFilenamePrefix}${testNumber}`).then(
           // Run against input
-          () => {
-            console.log(`${InputFilenamePrefix}${testNumber} written`);
-
-            return this.runTest(container, testNumber);
-          }));
+          () => this.runTest(container, testNumber)));
       // Once all have been completed
       Promise.all(testRuns).then(
         testResults => {
-          console.log('finished all tests');
-
           let totalExecTime = 0;
           let firstErr: TestResult;
           let hints = [];
           testResults.forEach(testResult => {
-            console.log(testResult);
-
             if (testResult.status === 'Pass') {
               totalExecTime += testResult.execTime;
             } else {
@@ -165,9 +148,7 @@ export class Runner {
               }
             }
           });
-          console.log('making final result');
-
-          // TODO: double check
+          // TODO: cleanup
           let finalResult: FinalResult;
           if (firstErr) {
             finalResult = { status: firstErr.status };
@@ -183,7 +164,6 @@ export class Runner {
               execTime: totalExecTime
             };
           }
-          console.log(finalResult);
           resolve(finalResult);
         },
         err => console.error('Could not run all tests: ' + err));
@@ -200,8 +180,6 @@ export class Runner {
     return new Promise<TestResult>((resolve, reject) =>
       container.runScript('bash', RunScript, args).then(
         output => {
-          console.log('run script ran');
-
           let err: any = output.err;
           if (err) {
             let failingTestResult: TestResult = err.code === TimeoutCode
@@ -220,7 +198,7 @@ export class Runner {
                   testResult = {
                     status: 'Pass',
                     execTime: parseFloat(output.stdout)
-                  }
+                  };
                 } else {
                   testResult = {
                     status: 'Fail'

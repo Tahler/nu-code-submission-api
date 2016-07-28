@@ -2,7 +2,7 @@ import * as bodyParser from 'body-parser';
 import { Promise } from 'es6-promise';
 import * as express from 'express';
 
-import { InvalidRequestError, LanguageUnsupportedError } from './errors';
+import { InvalidRequestError, LanguageUnsupportedError, UnexpectedError } from './errors';
 import { Firebase } from './firebase';
 import { HttpStatusCodes } from './http-status-codes';
 import { Request } from './request';
@@ -75,26 +75,20 @@ function handleRequest(request: Request, res: express.Response) {
       }, {
         'input' : '-19',
         'output' : '-17'
-      } ]
+      } ];
 
       // Ready to execute code
       let runner = new Runner(lang, src, timeout, tests);
       runner.run().then(
-        result => {
-          console.log(result);
-          console.log('code finished');
-          res.status(HttpStatusCodes.Success).send(result);
-        },
+        result => res.status(HttpStatusCodes.Success).send(result),
         err => {
-          console.log('bummer');
-          console.log(err);
+          res.status(HttpStatusCodes.ServerError).send(UnexpectedError);
+          console.error(err);
         });
     },
     err => {
       console.error(err);
-      res.status(HttpStatusCodes.ServerError).send({
-        message: 'The server ran into an unexpected error.'
-      });
+      res.status(HttpStatusCodes.ServerError).send(UnexpectedError);
     }
   );
 }

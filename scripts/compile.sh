@@ -18,9 +18,11 @@ COMPILATION_ERR_CODE=127
 # Begin script
 ################################################################################
 
+# TODO: is this necessary? some compilers may output to stderr
 # Redirect compilation errors to stdout
 "$compiler" "$source_file"
 
+# TODO: use ternary
 if [ $? -eq 0 ]; then
   exit_code=0
 else
