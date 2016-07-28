@@ -6,8 +6,9 @@ import { Promise } from 'es6-promise';
 const DockerImage = 'compiler';
 const ContainerUserDir = '~';
 
-// TODO: actually move these scripts
 const CompileScript = './scripts/compile.sh';
+// Must match the non-zero exit_code in `CompileScript`
+const CompilationErrorCode = 127;
 const RunScript = './scripts/run.sh';
 
 const InputFilenamePrefix = 'input-';
@@ -39,10 +40,12 @@ export class Runner {
   }
 
   run(): Promise<FinalResult> {
+    console.log('running');
+
     // Start the container
     return this.startContainer().then(
       // Copy necessary files
-      container => this.copyFiles(container).then(
+      container => this.copySrc(container).then(
         // Compile, run, and return the result
         () => this.testUserCode(container)));
   }
@@ -55,7 +58,11 @@ export class Runner {
         // Switch to the directory the user's code will run in
         () => container.changeDirectory(ContainerUserDir).then(
           // TODO: double check that an err goes to the cleanup section
-          () => resolve(container),
+          () => {
+            console.log('changed dir');
+
+            resolve(container);
+          },
           err => {
             reject(err);
             console.error('Error changing directory: ' + err);
@@ -70,9 +77,7 @@ export class Runner {
   /**
    * Copies all the necessary files for execution.
    */
-  private copyFiles(container: DockerContainer): Promise<void> {
-    // The only thing needed is the src file.
-    // TODO: is this true?
+  private copySrc(container: DockerContainer): Promise<void> {
     return container.writeFile(this.src, this.filename);
   }
 
@@ -80,12 +85,15 @@ export class Runner {
     return new Promise<FinalResult>((resolve, reject) =>
       this.compileIfNecessary(container).then(
         result => {
+          console.log('compileIfNecessary resolved');
+
           if (result.success) {
-            this.runAllTests(container);
+            console.log('compiled');
+            resolve(this.runAllTests(container));
           } else {
             resolve({
-              message: result.message,
-              status: 'CompilationError'
+              status: 'CompilationError',
+              message: result.message
             });
           }
         })
@@ -98,16 +106,24 @@ export class Runner {
    * immediately resolved.
    */
   private compileIfNecessary(container: DockerContainer): Promise<CompilationResult> {
-    return new Promise<CompilationResult>(resolve => {
+    return new Promise<CompilationResult>((resolve, reject) => {
       if (this.isCompiled()) {
         container.runScript('bash', CompileScript, [this.compiler, this.filename]).then(
           output => {
-            // TODO: making assumptions here...
-            // TODO: I think output.err could be a result from a docker error or compilation error
-            let compilationResult = output.err
-              ? { message: output.stderr, success: false }
-              : { success: true };
-            resolve(compilationResult);
+            let err: any = output.err;
+            // TODO: clean this up into one return / one if resolve else rejects
+            if (err) {
+              if (err.code === 127) {
+                resolve({
+                  success: false,
+                  message: output.stderr
+                });
+              } else {
+                reject(err);
+              }
+            } else {
+              resolve({ success: true });
+            }
           });
       } else {
         resolve({ success: true });
@@ -122,15 +138,22 @@ export class Runner {
         // Write test input to the container
         container.writeFile(test.input, `${InputFilenamePrefix}${testNumber}`).then(
           // Run against input
-          () => this.runTest(container, testNumber)));
-      // Only return once all have been completed
+          () => {
+            console.log(`${InputFilenamePrefix}${testNumber} written`);
+
+            return this.runTest(container, testNumber);
+          }));
+      // Once all have been completed
       Promise.all(testRuns).then(
         testResults => {
+          console.log('finished all tests');
+
           let totalExecTime = 0;
           let firstErr: TestResult;
           let hints = [];
-          // TODO: is this synchronous? It should be
           testResults.forEach(testResult => {
+            console.log(testResult);
+
             if (testResult.status === 'Pass') {
               totalExecTime += testResult.execTime;
             } else {
@@ -142,18 +165,26 @@ export class Runner {
               }
             }
           });
+          console.log('making final result');
+
           // TODO: double check
-          let finalResult: FinalResult = firstErr
-            ? {
-              hints: hints.length ? hints : undefined,
-              message: firstErr.message,
-              status: firstErr.status
+          let finalResult: FinalResult;
+          if (firstErr) {
+            finalResult = { status: firstErr.status };
+            if (firstErr.message) {
+              finalResult.message = firstErr.message;
             }
-            : {
-              execTime: totalExecTime,
-              status: 'Pass'
+            if (hints.length) {
+              finalResult.hints = hints;
+            }
+          } else {
+            finalResult = {
+              status: 'Pass',
+              execTime: totalExecTime
             };
-          return finalResult;
+          }
+          console.log(finalResult);
+          resolve(finalResult);
         },
         err => console.error('Could not run all tests: ' + err));
     });
@@ -169,22 +200,38 @@ export class Runner {
     return new Promise<TestResult>((resolve, reject) =>
       container.runScript('bash', RunScript, args).then(
         output => {
+          console.log('run script ran');
+
           let err: any = output.err;
           if (err) {
             let failingTestResult: TestResult = err.code === TimeoutCode
               ? { status: 'Timeout' }
               : {
-                message: output.stderr,
-                status: 'RuntimeError'
+                status: 'RuntimeError',
+                message: output.stdout
               };
             resolve(failingTestResult);
           } else {
-            return this.testPassed(container, testNumber).then(
-              testPassed => testPassed
-                ? { execTime: parseFloat(output.stdout), status: 'Pass' }
-                // Will not actually be set if hint is undefined
-                // TODO: is this true?
-                : { hint: this.tests[testNumber].hint, status: 'Fail' });
+            // TODO: cleanup - this should be returned?
+            this.testPassed(container, testNumber).then(
+              testPassed => {
+                let testResult: TestResult;
+                if (testPassed) {
+                  testResult = {
+                    status: 'Pass',
+                    execTime: parseFloat(output.stdout)
+                  }
+                } else {
+                  testResult = {
+                    status: 'Fail'
+                  };
+                  let hint = this.tests[testNumber].hint;
+                  if (hint) {
+                    testResult.hint = hint;
+                  }
+                }
+                resolve(testResult);
+              });
           }
         }));
   }
