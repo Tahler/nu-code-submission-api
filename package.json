@@ -1,22 +1,21 @@
 {
   "name": "nu-code",
   "version": "1.0.0",
-  "description": "This is my capstone project.",
-  "main": "app.js",
+  "description": "The compilation API for NU Code, my capstone project.",
   "scripts": {
     "postinstall": "typings install",
-    "start": "tsc -p src && node out/index.js"
+    "start": "tsc -p src && node ./out/index.js"
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@gitlab.com/salmonman808/capstone.git"
+    "url": "git+ssh://git@github.com:Tahler/capstone-api.git"
   },
   "author": "Tyler Berry",
   "license": "ISC",
   "bugs": {
-    "url": "https://gitlab.com/salmonman808/capstone/issues"
+    "url": "https://github.com/Tahler/capstone-api/issues"
   },
-  "homepage": "https://gitlab.com/salmonman808/capstone#README",
+  "homepage": "https://github.com/Tahler/capstone-api/blob/master/README.md",
   "dependencies": {
     "body-parser": "^1.15.1",
     "es6-promise": "^3.2.1",
