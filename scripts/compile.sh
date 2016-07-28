@@ -12,12 +12,19 @@
 compiler=$1
 source_file=$2
 
+COMPILATION_ERR_CODE=127
+
 ################################################################################
 # Begin script
 ################################################################################
 
 # Redirect compilation errors to stdout
 "$compiler" "$source_file"
-exit_code=$?
+
+if [ $? -eq 0 ]; then
+  exit_code=0
+else
+  exit_code=$COMPILATION_ERR_CODE
+fi
 
 exit $exit_code
