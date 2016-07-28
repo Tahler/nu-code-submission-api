@@ -14,9 +14,10 @@ RUN apt-get install -y nodejs
 RUN apt-get install -y docker.io
 
 # Copy and install the necessary web files
+# Note that '.' references the first argument in `docker build`
 COPY . /var/www
 WORKDIR /var/www
-RUN npm install
+RUN npm install --production
 
 # Startup command
 ENTRYPOINT npm start
