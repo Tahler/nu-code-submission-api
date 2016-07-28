@@ -52,30 +52,12 @@ function handleRequest(request: Request, res: express.Response) {
   let problemId = request.problem;
   // Load the timeout and test cases asynchronously
   Promise.all([
-    Promise.resolve()
-    // Firebase.get(`/problems/${problemId}/timeout`),
-    // Firebase.get(`/tests/${problemId}`)
+    Firebase.get(`/problems/${problemId}/timeout`),
+    Firebase.get(`/tests/${problemId}`)
   ]).then(
     values => {
-      // let timeout = values[0];
-      // let tests = values[1];
-      // TODO: this is for testing, replace back with firebase
-      let timeout = 2;
-      let tests = [ {
-        'hint' : 'Test hint 1',
-        'input' : '0',
-        'output' : '2'
-      }, {
-        'hint' : 'this is a hint',
-        'input' : '2',
-        'output' : '4'
-      }, {
-        'input' : '1234',
-        'output' : '1236'
-      }, {
-        'input' : '-19',
-        'output' : '-17'
-      } ];
+      let timeout = values[0];
+      let tests = values[1];
 
       // Ready to execute code
       let runner = new Runner(lang, src, timeout, tests);
