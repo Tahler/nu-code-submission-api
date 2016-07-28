@@ -10,8 +10,7 @@
     "class-name": true,
     "comment-format": [
       true,
-      "check-space",
-      "check-uppercase"
+      "check-space"
     ],
     "curly": true,
     "eofline": true,
@@ -45,6 +44,7 @@
       true
     ],
     "no-var-keyword": true,
+    "object-literal-sort-keys": false,
     "one-line": [
       true,
       "check-catch",
