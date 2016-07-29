@@ -30,9 +30,14 @@ gulp.task('copy-scripts', function () {
     .pipe(gulp.dest('dist/scripts'));
 });
 
-gulp.task('copy-files', ['copy-package', 'copy-credentials', 'copy-scripts']);
+gulp.task('copy-src-files', ['copy-package', 'copy-credentials', 'copy-scripts']);
 
-gulp.task('build', ['transpile', 'copy-files']);
+gulp.task('copy-api-dockerfile', function () {
+  return gulp.src('src/dockerfile/api.dockerfile')
+    .pipe(gulp.dest('dist'));
+});
+
+gulp.task('build', ['transpile', 'copy-src-files']);
 
 // Starts / restarts node
 var node;
@@ -55,22 +60,22 @@ gulp.task('run', ['start-server'], function () {
   gulp.watch('src/**/*', ['start-server']);
 });
 
-gulp.task('build-api', ['build'], shell.task(
-  'docker build -t api -f dockerfile/api.dockerfile ./dist'
-));
+gulp.task('build-api', ['build', 'copy-api-dockerfile'], shell.task(
+  'docker build -t api -f ./dist/api.dockerfile ./dist'));
 
-gulp.task('start-api', ['build-api'], shell.task(
-  'docker run -d --name api -p 8080:8080 -v /var/run/docker.sock:/var/run/docker.sock api'
-));
+// Starts / restarts the api container
+gulp.task('start-api', ['build-api', 'stop-api'], shell.task(
+  'docker run -d --name api -p 8080:8080 -v /var/run/docker.sock:/var/run/docker.sock api'));
 
+// '2>/dev/null' ignores stderr
+// '|| true' "forces" a 0 exit code
 gulp.task('stop-api', shell.task([
-  'docker kill api',
-  'docker rm api'
+  'docker kill api 2>/dev/null || true',
+  'docker rm api 2>/dev/null || true'
 ]));
 
 gulp.task('build-compiler', shell.task(
-  'docker build -t compiler -f dockerfile/compiler.dockerfile .'
-));
+  'docker build -t compiler -f ./src/dockerfile/compiler.dockerfile .'));
 
 gulp.task('default', ['run']);
 
@@ -78,4 +83,4 @@ process.on('exit', function() {
   if (node) {
     node.kill();
   }
-})
+});
