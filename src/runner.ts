@@ -44,7 +44,14 @@ export class Runner {
       // Copy necessary files
       container => this.copySrc(container).then(
         // Compile, run, and return the result
-        () => this.testUserCode(container)));
+        () => this.testUserCode(container).then(
+          result => {
+            container.cleanup();
+            return result;
+          },
+          err => container.cleanup()
+        ),
+        err => container.cleanup()));
   }
 
   private startContainer(): Promise<DockerContainer> {
