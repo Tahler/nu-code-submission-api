@@ -18,7 +18,7 @@ For details on how to send requests and what responses to expect, read
 A list of all the supported languages can be found
 [here](https://github.com/Tahler/capstone-api/blob/master/doc/supported-languages.md).
 
-## Firebase and Credentials<a name="headin"></a>
+## Firebase and Credentials
 
 NU Code utilizes Firebase for storing data and user authentication. This API will needs access to
 the Firebase instance.
