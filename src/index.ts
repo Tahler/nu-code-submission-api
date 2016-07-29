@@ -2,7 +2,13 @@ import * as bodyParser from 'body-parser';
 import { Promise } from 'es6-promise';
 import * as express from 'express';
 
-import { InvalidRequestError, LanguageUnsupportedError, UnexpectedError } from './errors';
+import {
+  FirebasePathDoesNotExistError,
+  InvalidRequestError,
+  LanguageUnsupportedError,
+  ProblemDoesNotExistError,
+  UnexpectedError
+} from './errors';
 import { Firebase } from './firebase';
 import { HttpStatusCodes } from './http-status-codes';
 import { Request } from './request';
@@ -50,6 +56,7 @@ function handleRequest(request: Request, res: express.Response) {
   let lang = request.lang;
   let src = request.src;
   let problemId = request.problem;
+  // Retreve the needed info from Firebase
   // Load the timeout and test cases asynchronously
   Promise.all([
     Firebase.get(`/problems/${problemId}/timeout`),
@@ -69,8 +76,12 @@ function handleRequest(request: Request, res: express.Response) {
         });
     },
     err => {
-      console.error(err);
-      res.status(HttpStatusCodes.ServerError).send(UnexpectedError);
+      if (err instanceof FirebasePathDoesNotExistError) {
+        res.status(HttpStatusCodes.BadRequest).send(new ProblemDoesNotExistError(problemId));
+      } else {
+        res.status(HttpStatusCodes.ServerError).send(UnexpectedError);
+        console.error(err);
+      }
     }
   );
 }

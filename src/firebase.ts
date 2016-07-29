@@ -1,6 +1,8 @@
 import { Promise } from 'es6-promise';
 import * as firebase from 'firebase';
 
+import { FirebasePathDoesNotExistError } from './errors';
+
 // TODO: Relative to where Node is run from
 const ServiceCredentialsPath = './credentials/server-credentials.json';
 const DatabaseUrl = 'https://nu-code-350ea.firebaseio.com';
@@ -24,7 +26,7 @@ export namespace Firebase {
           if (snapshot.exists()) {
             resolve(snapshot.val());
           } else {
-            reject(`${path} does not exist.`);
+            reject(new FirebasePathDoesNotExistError(path));
           }
         },
         // Pass on the error to the caller

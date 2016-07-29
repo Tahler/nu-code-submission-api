@@ -38,6 +38,22 @@ export class InvalidRequestError implements Error {
   }
 }
 
+export class FirebasePathDoesNotExistError implements Error {
+  error: string;
+
+  constructor(path: string) {
+    this.error = `Path "${path}" does not exist.`;
+  }
+}
+
+export class ProblemDoesNotExistError implements Error {
+  error: string;
+
+  constructor(problemId: string) {
+    this.error = `Problem "${problemId}" does not exist.`;
+  }
+}
+
 export const UnexpectedError: Error = {
   error: 'The server ran into an unexpected error.'
 };
