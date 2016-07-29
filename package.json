@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "description": "The compilation API for NU Code, my capstone project.",
   "scripts": {
-    "postinstall": "typings install",
-    "start": "tsc -p src && node ./out/index.js"
+    "postinstall": "typings install"
   },
   "repository": {
     "type": "git",

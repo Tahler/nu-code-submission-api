@@ -20,4 +20,4 @@ WORKDIR /var/www
 RUN npm install --production
 
 # Startup command
-ENTRYPOINT npm start
+ENTRYPOINT node ./index.js
