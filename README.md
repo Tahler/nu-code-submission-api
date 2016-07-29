@@ -1,4 +1,4 @@
-# Capstone API
+# NU Code API
 
 This is the compilation API for NU Code, my capstone project.
 
