@@ -28,13 +28,16 @@ needed to access the Firebase instance. Running this project as is will require 
 with a legal [schema](https://github.com/Tahler/capstone-api/blob/master/doc/example-schema.json)
 and the credentials to access it.
 
-## Building
+## Installation, Building, and Starting
 
-As this API is meant to run in a docker container, [Docker](https://www.docker.com/) must be
-installed with the docker binary added to the system path. See Docker's official installation
-instructions [here](https://docs.docker.com/engine/installation/).
+    As this API is meant to run in a docker container, [Docker](https://www.docker.com/) must be
+    installed with the docker binary added to the system path. See Docker's official installation
+    instructions [here](https://docs.docker.com/engine/installation/).
 
-This project uses [Gulp](http://gulpjs.com/) to manage the build / run process.
+    You will also need a Firebase instance and credentials, as mentioned in
+    **Firebase and Credentials**.
+
+Installing is as easy as `npm install`.
 
 In the project root, run `gulp start-api` to start the API in a docker container.
 
