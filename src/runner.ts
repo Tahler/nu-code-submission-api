@@ -49,22 +49,7 @@ export class Runner {
 
   private startContainer(): Promise<DockerContainer> {
     let container = new DockerContainer(DockerImage);
-    return new Promise<DockerContainer>((resolve, reject) =>
-      // Start the docker container
-      container.start().then(
-        // Switch to the directory the user's code will run in
-        () => container.changeDirectory(ContainerUserDir).then(
-          // TODO: double check that an err goes to the cleanup section
-          () => resolve(container),
-          err => {
-            reject(err);
-            console.error('Error changing directory: ' + err);
-          }),
-        err => {
-          reject(err);
-          container.cleanup().catch(
-            err => console.error('Error removing container: ' + err));
-        }));
+    return container.start().then(() => container);
   }
 
   /**
@@ -86,8 +71,8 @@ export class Runner {
               message: result.message
             });
           }
-        })
-    );
+        },
+        err => reject(err)));
   }
 
   /**
@@ -101,15 +86,17 @@ export class Runner {
         container.runScript('bash', CompileScript, [this.compiler, this.filename]).then(
           output => {
             let err: any = output.err;
+            let stderr = output.stderr;
+
             // TODO: clean this up into one return / one if resolve else rejects
-            if (err) {
-              if (err.code === CompilationErrorCode) {
+            if (err || stderr) {
+              if (err && err.code && parseInt(err.code) === CompilationErrorCode) {
                 resolve({
                   success: false,
-                  message: output.stderr
+                  message: stderr
                 });
               } else {
-                reject(err);
+                reject(stderr);
               }
             } else {
               resolve({ success: true });
@@ -217,8 +204,10 @@ export class Runner {
     let expectedOutput = this.tests[testNumber].output;
     let actualOutputFilename = `${ActualOutputFilenamePrefix}${testNumber}`;
     let expectedOutputFilename = `${ExpectedOutputFilenamePrefix}${testNumber}`;
-    return container.writeFile(expectedOutput, expectedOutputFilename).then(
-      () => container.filesAreIdentical(expectedOutputFilename, actualOutputFilename));
+    return container.writeFile(expectedOutput, expectedOutputFilename).then(() =>
+      container.filesAreIdentical(expectedOutputFilename, actualOutputFilename));
+    // return container.writeFile(expectedOutput, expectedOutputFilename).then(
+    //   () => container.filesAreIdentical(expectedOutputFilename, actualOutputFilename));
   }
 }
 
