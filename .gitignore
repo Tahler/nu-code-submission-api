@@ -43,4 +43,4 @@ jspm_packages
 typings/
 
 # The transpiled JavaScript files
-out/
+dist/
