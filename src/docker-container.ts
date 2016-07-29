@@ -54,32 +54,6 @@ export class DockerContainer {
         }));
   }
 
-  changeDirectory(dir: string): Promise<void> {
-    return new Promise<void>((resolve, reject) =>
-      this.runCmd(`docker exec ${this.containerId} sh -c cd ${dir}`).then(
-        output => {
-          if (output.err) {
-            reject(output.err);
-          } else {
-            this.currentDirectory = dir;
-            resolve();
-          }
-        }));
-  }
-
-  mkdirInContainer(dirName: string): Promise<void> {
-    return new Promise<void>((resolve, reject) =>
-      this.runCmd(`docker exec ${this.containerId} mkdir -p ${dirName}`).then(
-        output => {
-          if (output.err) {
-            reject(output.err);
-          } else {
-            this.containerId = output.stdout;
-            resolve();
-          }
-        }));
-  }
-
   copyFile(srcPath: string, destPathInContainer: string): Promise<void> {
     let copyCmd =
       `cat ${srcPath} | docker exec -i ${this.containerId} sh -c 'cat > ${destPathInContainer}'`;

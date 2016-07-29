@@ -4,7 +4,6 @@ import { Test } from './test';
 import { Promise } from 'es6-promise';
 
 const DockerImage = 'compiler';
-const ContainerUserDir = '~';
 
 const CompileScript = './scripts/compile.sh';
 // Must match the non-zero exit_code in `CompileScript`

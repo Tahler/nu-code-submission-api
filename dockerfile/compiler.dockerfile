@@ -55,4 +55,4 @@ RUN apt-get install -y g++-5
 
 RUN rm -rf /var/lib/apt/lists/*
 
-WORKDIR /
+WORKDIR /workdir
