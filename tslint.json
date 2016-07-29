@@ -57,6 +57,7 @@
       true,
       "single"
     ],
+    "radix": false,
     "semicolon": [
       true,
       "always"
