@@ -6,7 +6,7 @@ Technologies:
 - TypeScript / Express to define the API succinctly.
 - Docker to contain user-submitted code.
 - Firebase for storing data and user authentication.
-- Gulp for building and automation.
+- Gulp for automating the build and run processes.
 
 ## Interface
 
@@ -33,6 +33,11 @@ and the credentials to access it.
 As this API is meant to run in a docker container, [Docker](https://www.docker.com/) must be
 installed with the docker binary added to the system path. See Docker's official installation
 instructions [here](https://docs.docker.com/engine/installation/).
-As this API is meant to run in a docker container, Docker must be installed with the docker
-binary added to the system path. See Docker's official installation instructions
-[here](https://docs.docker.com/engine/installation/).
+
+This project uses [Gulp](http://gulpjs.com/) to manage the build / run process.
+
+In the project root, run `gulp start-api` to start the API in a docker container.
+
+Similarly, stop the API with `gulp stop-api`.
+
+Look for the container's IP address with `docker inspect api`.
