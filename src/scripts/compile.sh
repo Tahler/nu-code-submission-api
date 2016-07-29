@@ -9,8 +9,8 @@
 #	Example Usage:
 #   ./compile.sh gcc file.c
 
-compiler=$1
-source_file=$2
+compiler="$1"
+source_file="$2"
 
 COMPILATION_ERR_CODE=127
 
@@ -20,7 +20,7 @@ COMPILATION_ERR_CODE=127
 
 # TODO: is this necessary? some compilers may output to stderr
 # Redirect compilation errors to stdout
-"$compiler" "$source_file"
+$compiler $source_file
 
 if [ $? -eq 0 ]; then
   exit_code=0

@@ -13,10 +13,10 @@
 #   ./run.sh 1 "./a.out" input.txt output.txt
 #   ./run.sh 3 "nodejs solution.js" input.txt output.txt
 
-SECONDS=$1
-COMMAND=$2
-INPUT_FILE=$3
-OUTPUT_FILE=$4
+SECONDS="$1"
+COMMAND="$2"
+INPUT_FILE="$3"
+OUTPUT_FILE="$4"
 
 ################################################################################
 # Begin script
@@ -26,7 +26,7 @@ DATE_EXPRESSION="+%s.%N"
 START_TIME=$(date $DATE_EXPRESSION)
 
 # Redirect runtime errors to stdout
-output=$( (cat "$INPUT_FILE" | timeout "$SECONDS"s $COMMAND) \
+output=$( (cat $INPUT_FILE | timeout "$SECONDS"s $COMMAND) \
   2>&1 \
   1>$OUTPUT_FILE)
 EXIT_CODE=${PIPESTATUS[0]}
@@ -42,7 +42,7 @@ case $EXIT_CODE in
   $SUCCESS_CODE)
     # Successful run
     # Report total exec time
-    echo "$TOTAL_TIME"
+    echo $TOTAL_TIME
     ;;
   $TIMEOUT_CODE)
     # Timeout
@@ -52,7 +52,7 @@ case $EXIT_CODE in
   *)
     # Unsuccessful run
     # Report error message
-    echo "$output"
+    echo $output
     ;;
 esac
 
