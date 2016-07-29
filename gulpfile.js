@@ -5,7 +5,6 @@ var sourcemaps = require('gulp-sourcemaps');
 var shell = require('gulp-shell');
 
 var spawn = require('child_process').spawn;
-var node;
 
 gulp.task('transpile', function () {
   return tsProject.src()
@@ -35,15 +34,15 @@ gulp.task('copy-files', ['copy-package', 'copy-credentials', 'copy-scripts']);
 
 gulp.task('build', ['transpile', 'copy-files']);
 
-gulp.task('run', ['build'], shell.task(
-  'node ./dist/index.js'
-));
-
-gulp.task('server', function () {
+// Starts / restarts node
+var node;
+gulp.task('start-server', ['build'], function () {
   if (node) {
     node.kill();
   }
-  node = spawn('node', ['dist/index.js'], {stdio: 'inherit'})
+  process.chdir('dist');
+  node = spawn('node', ['./index.js'], {stdio: 'inherit'})
+  process.chdir('..');
   node.on('close', function (code) {
     if (code === 8) {
       gulp.log('Error detected, waiting for changes...');
@@ -51,12 +50,10 @@ gulp.task('server', function () {
   });
 });
 
-gulp.task('run', ['build'], function () {
-  gulp.run('server');
-  gulp.watch('src/**/*', ['run'], function () {
-    gulp.run('server');
-  });
-})
+// Watches for file changes and restarts the node instance
+gulp.task('run', ['start-server'], function () {
+  gulp.watch('src/**/*', ['start-server']);
+});
 
 gulp.task('build-api', ['build'], shell.task(
   'docker build -t api -f dockerfile/api.dockerfile ./dist'
