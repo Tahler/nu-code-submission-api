@@ -22,7 +22,6 @@ COMPILATION_ERR_CODE=127
 # Redirect compilation errors to stdout
 "$compiler" "$source_file"
 
-# TODO: use ternary
 if [ $? -eq 0 ]; then
   exit_code=0
 else
