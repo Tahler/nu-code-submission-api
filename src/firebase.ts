@@ -54,11 +54,8 @@ export namespace Firebase {
         submitterUid: request.submitterUid
       };
       // Record for the leaderboard (but only if they passed)
-      console.log(userSubmission);
-      console.log(successfulSubmission);
-
-      let leaderboardRecord = database.ref(`/problems/${request.problem}/successfulSubmissions`)
-        .push(successfulSubmission);
+      let leaderboardRecord = database.ref(`/successfulSubmissions/${request.problem}`)
+          .push(successfulSubmission);
       leaderboardRecord.catch(
           err => console.error(`Failed to record submission to leaderboard: ${err}`));
       actions.push(leaderboardRecord);
@@ -75,8 +72,8 @@ export namespace Firebase {
     return new Promise<void>((resolve, reject) => {
       // Mapping from void[] to void
       Promise.all(actions).then(
-        () => resolve(),
-        err => reject(err));
+          () => resolve(),
+          err => reject(err));
     });
   }
 }
