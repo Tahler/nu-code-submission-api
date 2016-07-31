@@ -18,7 +18,7 @@ export interface TestResult {
 
 type FinalResultStatus = TestResultStatus | 'CompilationError';
 
-export interface FeedbackResult {
+export interface Result {
   status: FinalResultStatus;
   // If status === 'Pass'
   execTime?: number;
@@ -28,8 +28,17 @@ export interface FeedbackResult {
   message?: string;
 }
 
-export interface Result {
+export interface UserSubmission {
+  lang: string;
   status: FinalResultStatus;
+  submittedOn: string;
   // If status === 'Pass'
   execTime?: number;
+}
+
+export interface SuccessfulSubmission {
+  status: FinalResultStatus;
+  execTime: number;
+  submittedOn: string;
+  submitterUid: string;
 }

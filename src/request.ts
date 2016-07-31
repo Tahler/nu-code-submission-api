@@ -8,6 +8,8 @@ export interface Request {
   lang: string;
   src: string;
   problem: string;
+  submittedOn: string;
+  submitterUid?: string;
 }
 
 export namespace Request {

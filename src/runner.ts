@@ -1,7 +1,7 @@
 import { Promise } from 'es6-promise';
 
 import { DockerContainer } from './docker-container';
-import { CompilationResult, FeedbackResult, TestResult } from './results';
+import { CompilationResult, Result, TestResult } from './results';
 import { SupportedLanguages } from './supported-languages';
 import { Test } from './test';
 
@@ -24,11 +24,10 @@ export class Runner {
   private filename: string;
 
   constructor(
-    lang: string,
-    private src: string,
-    private seconds: number,
-    private tests: Test[]
-  ) {
+      lang: string,
+      private src: string,
+      private seconds: number,
+      private tests: Test[]) {
     let params = SupportedLanguages[lang];
     this.compiler = params.compiler;
     this.filename = params.filename;
@@ -40,7 +39,7 @@ export class Runner {
     return !!this.compiler;
   }
 
-  run(): Promise<FeedbackResult> {
+  run(): Promise<Result> {
     // Start the container
     return this.startContainer().then(
       // Copy necessary files
@@ -68,8 +67,8 @@ export class Runner {
     return container.writeFile(this.src, this.filename);
   }
 
-  private testUserCode(container: DockerContainer): Promise<FeedbackResult> {
-    return new Promise<FeedbackResult>((resolve, reject) =>
+  private testUserCode(container: DockerContainer): Promise<Result> {
+    return new Promise<Result>((resolve, reject) =>
       this.compileIfNecessary(container).then(
         result => {
           if (result.success) {
@@ -117,8 +116,8 @@ export class Runner {
     });
   }
 
-  private runAllTests(container: DockerContainer): Promise<FeedbackResult> {
-    return new Promise<FeedbackResult>((resolve, reject) => {
+  private runAllTests(container: DockerContainer): Promise<Result> {
+    return new Promise<Result>((resolve, reject) => {
       // Run each test asynchronously
       let testRuns: Promise<TestResult>[] = this.tests.map((test, testNumber) =>
         // Write test input to the container
@@ -144,7 +143,7 @@ export class Runner {
             }
           });
           // TODO: cleanup
-          let feebackResult: FeedbackResult;
+          let feebackResult: Result;
           if (firstErr) {
             feebackResult = { status: firstErr.status };
             if (firstErr.message) {

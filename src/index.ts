@@ -39,7 +39,8 @@ app.use((req, res, next) => {
  * https://github.com/Tahler/capstone-api/README.md
  */
 app.post('/api', jsonParser, (req, res) => {
-  let request = req.body;
+  let request: Request = req.body;
+  request.submittedOn = new Date().toISOString();
   if (Request.hasRequiredProperties(request)) {
     let lang = request.lang;
     if (langIsSupported(request.lang)) {
@@ -53,23 +54,25 @@ app.post('/api', jsonParser, (req, res) => {
 });
 
 function handleRequest(request: Request, res: express.Response) {
-  let lang = request.lang;
-  let src = request.src;
-  let problemId = request.problem;
   // Retreve the needed info from Firebase
   // Load the timeout and test cases asynchronously
   Promise.all([
-    Firebase.get(`/problems/${problemId}/timeout`),
-    Firebase.get(`/tests/${problemId}`)
+    Firebase.get(`/problems/${request.problem}/timeout`),
+    Firebase.get(`/tests/${request.problem}`)
   ]).then(
     values => {
       let timeout = values[0];
       let tests = values[1];
 
       // Ready to execute code
-      let runner = new Runner(lang, src, timeout, tests);
+      let runner = new Runner(request.lang, request.src, timeout, tests);
       runner.run().then(
-        result => res.status(HttpStatusCodes.Success).send(result),
+        result => {
+          if (request.submitterUid) {
+            Firebase.recordResult(request, result);
+          }
+          res.status(HttpStatusCodes.Success).send(result);
+        },
         err => {
           res.status(HttpStatusCodes.ServerError).send(UnexpectedError);
           console.error(err);
@@ -77,13 +80,12 @@ function handleRequest(request: Request, res: express.Response) {
     },
     err => {
       if (err instanceof FirebasePathDoesNotExistError) {
-        res.status(HttpStatusCodes.BadRequest).send(new ProblemDoesNotExistError(problemId));
+        res.status(HttpStatusCodes.BadRequest).send(new ProblemDoesNotExistError(request.problem));
       } else {
         res.status(HttpStatusCodes.ServerError).send(UnexpectedError);
         console.error(err);
       }
-    }
-  );
+    });
 }
 
 app.listen(Port, () => console.log(`Listening on port ${Port}`));
