@@ -1,7 +1,9 @@
+import { Promise } from 'es6-promise';
+
 import { DockerContainer } from './docker-container';
+import { CompilationResult, FeedbackResult, TestResult } from './results';
 import { SupportedLanguages } from './supported-languages';
 import { Test } from './test';
-import { Promise } from 'es6-promise';
 
 const DockerImage = 'compiler';
 
@@ -38,7 +40,7 @@ export class Runner {
     return !!this.compiler;
   }
 
-  run(): Promise<FinalResult> {
+  run(): Promise<FeedbackResult> {
     // Start the container
     return this.startContainer().then(
       // Copy necessary files
@@ -66,8 +68,8 @@ export class Runner {
     return container.writeFile(this.src, this.filename);
   }
 
-  private testUserCode(container: DockerContainer): Promise<FinalResult> {
-    return new Promise<FinalResult>((resolve, reject) =>
+  private testUserCode(container: DockerContainer): Promise<FeedbackResult> {
+    return new Promise<FeedbackResult>((resolve, reject) =>
       this.compileIfNecessary(container).then(
         result => {
           if (result.success) {
@@ -115,8 +117,8 @@ export class Runner {
     });
   }
 
-  private runAllTests(container: DockerContainer): Promise<FinalResult> {
-    return new Promise<FinalResult>((resolve, reject) => {
+  private runAllTests(container: DockerContainer): Promise<FeedbackResult> {
+    return new Promise<FeedbackResult>((resolve, reject) => {
       // Run each test asynchronously
       let testRuns: Promise<TestResult>[] = this.tests.map((test, testNumber) =>
         // Write test input to the container
@@ -142,22 +144,22 @@ export class Runner {
             }
           });
           // TODO: cleanup
-          let finalResult: FinalResult;
+          let feebackResult: FeedbackResult;
           if (firstErr) {
-            finalResult = { status: firstErr.status };
+            feebackResult = { status: firstErr.status };
             if (firstErr.message) {
-              finalResult.message = firstErr.message;
+              feebackResult.message = firstErr.message;
             }
             if (hints.length) {
-              finalResult.hints = hints;
+              feebackResult.hints = hints;
             }
           } else {
-            finalResult = {
+            feebackResult = {
               status: 'Pass',
               execTime: totalExecTime
             };
           }
-          resolve(finalResult);
+          resolve(feebackResult);
         },
         err => console.error('Could not run all tests: ' + err));
     });
@@ -211,39 +213,7 @@ export class Runner {
     let expectedOutput = this.tests[testNumber].output;
     let actualOutputFilename = `${ActualOutputFilenamePrefix}${testNumber}`;
     let expectedOutputFilename = `${ExpectedOutputFilenamePrefix}${testNumber}`;
-    return container.writeFile(expectedOutput, expectedOutputFilename).then(() =>
-      container.filesAreIdentical(expectedOutputFilename, actualOutputFilename));
-    // return container.writeFile(expectedOutput, expectedOutputFilename).then(
-    //   () => container.filesAreIdentical(expectedOutputFilename, actualOutputFilename));
+    return container.writeFile(expectedOutput, expectedOutputFilename).then(
+      () => container.filesAreIdentical(expectedOutputFilename, actualOutputFilename));
   }
 }
-
-interface CompilationResult {
-  success: boolean;
-  // The error message, included if success is false
-  message?: string;
-}
-
-interface TestResult {
-  status: TestResultStatus;
-  // If status === 'Pass'
-  execTime?: number;
-  // If status === 'Fail' and the test had a hint
-  hint?: string;
-  // If status === 'CompilationError' | 'RuntimeError'
-  message?: string;
-}
-
-type TestResultStatus = 'Pass' | 'Fail' | 'Timeout' | 'RuntimeError';
-
-interface FinalResult {
-  status: FinalResultStatus;
-  // If status === 'Pass'
-  execTime?: number;
-  // If status === 'Fail' and one of the failed tests had a hint
-  hints?: string[];
-  // If status === 'CompilationError' | 'RuntimeError'
-  message?: string;
-}
-
-type FinalResultStatus = TestResultStatus | 'CompilationError';
