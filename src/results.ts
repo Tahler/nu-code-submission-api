@@ -37,7 +37,7 @@ export interface UserSubmission {
 }
 
 export interface SuccessfulSubmission {
-  status: FinalResultStatus;
+  lang: string;
   execTime: number;
   submittedOn: string;
   submitterUid: string;

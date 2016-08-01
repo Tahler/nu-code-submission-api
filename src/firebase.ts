@@ -48,8 +48,8 @@ export namespace Firebase {
       userSubmission.execTime = result.execTime;
 
       let successfulSubmission: SuccessfulSubmission = {
-        status: result.status,
         execTime: result.execTime,
+        lang: request.lang,
         submittedOn: request.submittedOn,
         submitterUid: request.submitterUid
       };
