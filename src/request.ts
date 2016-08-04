@@ -9,7 +9,7 @@ export interface Request {
   src: string;
   problem: string;
   submittedOn: string;
-  submitterUid?: string;
+  submitterToken?: string;
 }
 
 export namespace Request {

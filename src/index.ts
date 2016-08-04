@@ -68,7 +68,7 @@ function handleRequest(request: Request, res: express.Response) {
       let runner = new Runner(request.lang, request.src, timeout, tests);
       runner.run().then(
         result => {
-          if (request.submitterUid) {
+          if (request.submitterToken) {
             Firebase.recordResult(request, result);
           }
           res.status(HttpStatusCodes.Success).send(result);
