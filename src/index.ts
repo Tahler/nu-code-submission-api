@@ -90,4 +90,4 @@ function handleRequest(request: Request, res: express.Response) {
 
 app.listen(Port, () => console.log(`Listening on port ${Port}`));
 
-export let App = app;
+export const App = app;
