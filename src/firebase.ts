@@ -36,44 +36,60 @@ export namespace Firebase {
     });
   }
 
+  function recordForUser(uid: string, problemId: string, submission: any): Promise<void> {
+    return database.ref(`/submissions/${uid}/${problemId}`)
+        .push(submission);
+  }
+
+  function recordToLeaderboard(problemId: string, submission: any): Promise<void> {
+    return database.ref(`/successfulSubmissions/${problemId}`)
+        .push(submission);
+  }
+
   export function recordResult(request: Request, result: Result): Promise<void> {
     let actions: Promise<void>[] = [];
 
-    let userSubmission: UserSubmission = {
-      status: result.status,
-      submittedOn: request.submittedOn,
-      lang: request.lang
-    };
-    if (userSubmission.status === 'Pass') {
-      userSubmission.execTime = result.execTime;
+    let problemId = request.problem;
 
-      let successfulSubmission: SuccessfulSubmission = {
-        execTime: result.execTime,
-        lang: request.lang,
+    // Decode the uid from the token
+    return firebase.auth().verifyIdToken(request.submitterToken).then(token => {
+      let uid = token.uid;
+      let emailVerified = token.email_verified;
+
+      let userSubmission: UserSubmission = {
+        status: result.status,
         submittedOn: request.submittedOn,
-        submitterUid: request.submitterUid
+        lang: request.lang
       };
-      // Record for the leaderboard (but only if they passed)
-      let leaderboardRecord = database.ref(`/successfulSubmissions/${request.problem}`)
-          .push(successfulSubmission);
-      leaderboardRecord.catch(
-          err => console.error(`Failed to record submission to leaderboard: ${err}`));
-      actions.push(leaderboardRecord);
-    }
+      if (result.status === 'Pass') {
+        userSubmission.execTime = result.execTime;
 
-    // Record for the user
-    let userRecording = database.ref(`/submissions/${request.submitterUid}/${request.problem}`)
-      .push(userSubmission);
-    userRecording.catch(
-        err => console.error(`Failed to record user's submission: ${err}`));
-    actions.push(userRecording);
+        if (emailVerified) {
+          let successfulSubmission: SuccessfulSubmission = {
+            execTime: result.execTime,
+            lang: request.lang,
+            submittedOn: request.submittedOn,
+            submitterUid: uid
+          };
+          // Record for the leaderboard (but only if they passed)
+          let leaderboardPromise = recordToLeaderboard(problemId, successfulSubmission);
+          leaderboardPromise.catch(err => console.error(`Failed to add to leaderboard: ${err}`));
+          actions.push(leaderboardPromise);
+        }
+      }
 
-    // Promise resolves when all actions finish
-    return new Promise<void>((resolve, reject) => {
-      // Mapping from void[] to void
-      Promise.all(actions).then(
-          () => resolve(),
-          err => reject(err));
+      // Record for the user
+      let userRecording = recordForUser(uid, problemId, userSubmission);
+      userRecording.catch(err => console.error(`Failed to record user's submission: ${err}`));
+      actions.push(userRecording);
+
+      // Promise resolves when all actions finish
+      return new Promise<void>((resolve, reject) => {
+        // Mapping from void[] to void
+        Promise.all(actions).then(
+            () => resolve(),
+            err => reject(err));
+      });
     });
   }
 }
