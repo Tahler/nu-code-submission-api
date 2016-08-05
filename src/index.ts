@@ -46,10 +46,10 @@ app.post('/api', jsonParser, (req, res) => {
     if (langIsSupported(request.lang)) {
       handleRequest(request, res);
     } else {
-      res.status(400).send(new LanguageUnsupportedError(lang));
+      res.status(HttpStatusCodes.BadRequest).send(new LanguageUnsupportedError(lang));
     }
   } else {
-    res.status(400).send(new InvalidRequestError(request));
+    res.status(HttpStatusCodes.BadRequest).send(new InvalidRequestError(request));
   }
 });
 
