@@ -136,7 +136,6 @@ export namespace Firebase {
       submitterUid: uid,
       submittedOn: submission.submittedOn
     };
-    // TODO: map the submission
     return database.ref(`successfulSubmissions/${problemId}`).push(successfulSubmission);
   }
 }
