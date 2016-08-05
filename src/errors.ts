@@ -57,3 +57,7 @@ export class ProblemDoesNotExistError implements Error {
 export const UnexpectedError: Error = {
   error: 'The server ran into an unexpected error.'
 };
+
+export const NoTokenError: Error = {
+  error: 'You must include the token of the newly verified user.'
+}

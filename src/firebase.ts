@@ -36,6 +36,10 @@ export namespace Firebase {
     });
   }
 
+  function decodeToken(token: string): Promise<any> {
+    return firebase.auth().verifyIdToken(token);
+  }
+
   function recordForUser(uid: string, problemId: string, submission: any): Promise<void> {
     return database.ref(`/submissions/${uid}/${problemId}`)
         .push(submission);
@@ -52,7 +56,7 @@ export namespace Firebase {
     let problemId = request.problem;
 
     // Decode the uid from the token
-    return firebase.auth().verifyIdToken(request.submitterToken).then(token => {
+    return decodeToken(request.submitterToken).then(token => {
       let uid = token.uid;
       let emailVerified = token.email_verified;
 
@@ -91,5 +95,48 @@ export namespace Firebase {
             err => reject(err));
       });
     });
+  }
+
+  export function moveSuccessfulSubmissionsToLeaderboard(token: string): Promise<void> {
+    return decodeToken(token).then(user => {
+      let uid = user.uid;
+      database.ref(`/submissions/${uid}`).once('value', snapshot => {
+        let moves: Promise<void>[] = [];
+        if (snapshot.exists()) {
+          let allProblems = snapshot.val();
+          // Loop through all the problems the user has submitted to
+          for (let problemId in allProblems) {
+            if (allProblems.hasOwnProperty(problemId)) {
+              let problemSubmissions = allProblems[problemId];
+              // Loop through all the submissions to this problem
+              for (let submissionId in problemSubmissions) {
+                if (problemSubmissions.hasOwnProperty(submissionId)) {
+                  let submission = problemSubmissions[submissionId];
+                  if (submission.status === 'Pass') {
+                    let move = moveToLeaderboard(problemId, uid, submission);
+                    moves.push(move);
+                  }
+                }
+              }
+            }
+          }
+        }
+        return Promise.all(moves);
+      });
+    });
+  }
+
+  function moveToLeaderboard(
+      problemId: string,
+      uid: string,
+      submission: UserSubmission): Promise<void> {
+    let successfulSubmission: SuccessfulSubmission = {
+      lang: submission.lang,
+      execTime: submission.execTime,
+      submitterUid: uid,
+      submittedOn: submission.submittedOn
+    };
+    // TODO: map the submission
+    return database.ref(`successfulSubmissions/${problemId}`).push(successfulSubmission);
   }
 }

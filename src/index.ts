@@ -6,6 +6,7 @@ import {
   FirebasePathDoesNotExistError,
   InvalidRequestError,
   LanguageUnsupportedError,
+  NoTokenError,
   ProblemDoesNotExistError,
   UnexpectedError
 } from './errors';
@@ -31,6 +32,21 @@ app.use((req, res, next) => {
     res.sendStatus(HttpStatusCodes.Success);
   } else {
     next();
+  }
+});
+
+/**
+ * To be posted when a user is newly verified.
+ *
+ * Retrieves all of that user's successful submissions and
+ */
+app.post('/verified', jsonParser, (req, res) => {
+  let request = req.body;
+  if (request.token) {
+    Firebase.moveSuccessfulSubmissionsToLeaderboard(request.token)
+        .then(() => res.sendStatus(HttpStatusCodes.Success));
+  } else {
+    res.status(HttpStatusCodes.BadRequest).send(NoTokenError);
   }
 });
 
