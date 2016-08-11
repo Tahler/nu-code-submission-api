@@ -31,7 +31,7 @@ export interface Result {
 export interface UserSubmission {
   lang: string;
   status: FinalResultStatus;
-  submittedOn: string;
+  submittedOn: number;
   // If status === 'Pass'
   execTime?: number;
 }
@@ -39,6 +39,6 @@ export interface UserSubmission {
 export interface SuccessfulSubmission {
   lang: string;
   execTime: number;
-  submittedOn: string;
+  submittedOn: number;
   submitterUid: string;
 }

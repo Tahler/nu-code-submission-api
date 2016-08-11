@@ -56,7 +56,7 @@ app.post('/verified', jsonParser, (req, res) => {
  */
 app.post('/api', jsonParser, (req, res) => {
   let request: Request = req.body;
-  request.submittedOn = new Date().toISOString();
+  request.submittedOn = new Date().getTime();
   if (Request.hasRequiredProperties(request)) {
     let lang = request.lang;
     if (langIsSupported(request.lang)) {

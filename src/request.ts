@@ -8,7 +8,7 @@ export interface Request {
   lang: string;
   src: string;
   problem: string;
-  submittedOn: string;
+  submittedOn: number;
   submitterToken?: string;
 }
 
