@@ -163,8 +163,12 @@ export namespace Firebase {
     let currentTimeScore = await getOrDefault(`${pathToUser}/timeScore`, 0);
     let newProblemsSolved = currentProblemsSolved + 1;
     let newTimeScore = currentTimeScore + timeIncrease;
+    // The index helps with querying firebase, and provides a sneaky way of ordering primarily by
+    // problemsSolved, and then by timeScore
+    let newIndex = currentProblemsSolved + '|' + currentTimeScore;
 
     return allActions([
+      set(`${pathToUser}/index`, newIndex),
       set(`${pathToUser}/problemsSolved`, newProblemsSolved),
       set(`${pathToUser}/timeScore`, newTimeScore)
     ]);
