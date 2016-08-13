@@ -10,6 +10,7 @@ RUN apt-get update
 # Tools
 ################################################################################
 
+RUN apt-get install -y curl
 RUN apt-get install -y bc
 RUN apt-get install -y wdiff
 
@@ -34,6 +35,7 @@ RUN rm -rf /var/cache/oracle-jdk8-installer
 ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 
 # JavaScript
+RUN curl -sL https://deb.nodesource.com/setup_6.x | bash -
 RUN apt-get install -y nodejs
 
 # Python 2.7
