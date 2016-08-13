@@ -72,8 +72,11 @@ app.post('/api', jsonParser, (req, res) => {
 function handleRequest(request: Request, res: express.Response) {
   // Retreve the needed info from Firebase
   // Load the timeout and test cases asynchronously
+  let timeoutLocation = request.competition
+      ? `/competitionProblems/${request.competition}/${request.problem}/timeout`
+      : `/problems/${request.problem}/timeout`;
   Promise.all([
-    Firebase.get(`/problems/${request.problem}/timeout`),
+    Firebase.get(timeoutLocation),
     Firebase.get(`/tests/${request.problem}`)
   ]).then(
     values => {

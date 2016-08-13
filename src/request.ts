@@ -7,8 +7,9 @@ export const RequiredProperties: string[] = [
 export interface Request {
   lang: string;
   src: string;
-  problem: string;
   submittedOn: number;
+  problem: string;
+  competition?: string;
   submitterToken?: string;
 }
 

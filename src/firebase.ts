@@ -21,7 +21,7 @@ firebase.initializeApp({
 let database = firebase.database();
 
 export namespace Firebase {
-  export function get(path: string): Promise<any> {
+  export async function get(path: string): Promise<any> {
     return new Promise<any>((resolve, reject) => {
       database.ref(path).once('value').then(
         snapshot => {
@@ -36,68 +36,153 @@ export namespace Firebase {
     });
   }
 
-  function decodeToken(token: string): Promise<any> {
+  /**
+   * If the path does not exist, resolve with defaultValue
+   */
+  export async function getOrDefault(path: string, defaultValue: any): Promise<any> {
+    return new Promise<any>((resolve, reject) => {
+      database.ref(path).once('value').then(
+        snapshot => {
+          if (snapshot.exists()) {
+            resolve(snapshot.val());
+          } else {
+            resolve(defaultValue);
+          }
+        },
+        // Pass on the error to the caller
+        err => reject(err));
+    });
+  }
+
+  export async function set(path: string, value): Promise<void> {
+    return database.ref(path).set(value);
+  }
+
+  async function decodeToken(token: string): Promise<any> {
     return firebase.auth().verifyIdToken(token);
   }
 
-  function recordForUser(uid: string, problemId: string, submission: any): Promise<void> {
+  async function recordForUser(uid: string, problemId: string, submission: any): Promise<void> {
     return database.ref(`/submissions/${uid}/${problemId}`)
         .push(submission);
   }
 
-  function recordToLeaderboard(problemId: string, submission: any): Promise<void> {
+  async function recordToLeaderboard(problemId: string, submission: any): Promise<void> {
     return database.ref(`/successfulSubmissions/${problemId}`)
         .push(submission);
   }
 
-  export function recordResult(request: Request, result: Result): Promise<void> {
+  async function recordProblemResult(
+      uid: string,
+      emailVerified: boolean,
+      request: Request,
+      result: Result): Promise<void> {
     let actions: Promise<void>[] = [];
 
     let problemId = request.problem;
+    let userSubmission: UserSubmission = {
+      status: result.status,
+      submittedOn: request.submittedOn,
+      lang: request.lang
+    };
+    if (result.status === 'Pass') {
+      userSubmission.execTime = result.execTime;
 
+      if (emailVerified) {
+        let successfulSubmission: SuccessfulSubmission = {
+          execTime: result.execTime,
+          lang: request.lang,
+          submittedOn: request.submittedOn,
+          submitterUid: uid
+        };
+        // Record for the leaderboard (but only if they passed)
+        let leaderboardPromise = recordToLeaderboard(problemId, successfulSubmission);
+        leaderboardPromise.catch(err => console.error(`Failed to add to leaderboard: ${err}`));
+        actions.push(leaderboardPromise);
+      }
+    }
+
+    // Record for the user
+    let userRecording = recordForUser(uid, problemId, userSubmission);
+    userRecording.catch(err => console.error(`Failed to record user's submission: ${err}`));
+    actions.push(userRecording);
+    // Promise resolves when all actions finish
+    return allActions(actions);
+  }
+
+  async function recordCompetitionResult(
+      uid: string,
+      emailVerified: boolean,
+      request: Request,
+      result: Result): Promise<void> {
+    let action: Promise<void>;
+
+    const competitionId = request.competition;
+    const problemId = request.problem;
+    const competitionPath = `/competitions/${competitionId}`;
+    const competitionProblemPath = `/competitionProblems/${competitionId}/${problemId}`;
+    const competitionScoreboardPath = `/competitionScoreboards/${competitionId}/${uid}`;
+    const competitionScoreboardProblemPath = `${competitionScoreboardPath}/problems/${problemId}`;
+
+    // Add 1 to incorrect or set incorrect to 1
+    let incorrectSubmissions = await getOrDefault(
+        `${competitionScoreboardProblemPath}/incorrectSubmissions`, 0);
+
+    if (result.status === 'Pass') {
+      // Set submittedOn
+      let submittedOn = request.submittedOn;
+      let startTime = await get(`${competitionPath}/startTime`);
+      let solutionTime = submittedOn - startTime;
+
+      let penaltySeconds = await get(`${competitionProblemPath}/penalty`);
+      let penaltyMilliseconds = penaltySeconds * 1000;
+      let penaltySum = incorrectSubmissions * penaltyMilliseconds;
+
+      let timeIncrease = solutionTime + penaltySum;
+
+      action = allActions([
+        incrementUserScore(competitionScoreboardPath, timeIncrease),
+        set(`${competitionScoreboardProblemPath}/solutionSubmittedAfter`,
+            solutionTime)
+      ]);
+    } else {
+      // Increase the number of incorrect submissions
+      action = set(
+          `${competitionScoreboardProblemPath}/incorrectSubmissions`,
+          incorrectSubmissions + 1);
+    }
+
+    return action;
+  }
+
+  /**
+   * Increases the number of correct problems and increases the time score
+   */
+  async function incrementUserScore(pathToUser: string, timeIncrease: number): Promise<void> {
+    let currentProblemsSolved = await getOrDefault(`${pathToUser}/problemsSolved`, 0);
+    let currentTimeScore = await getOrDefault(`${pathToUser}/timeScore`, 0);
+    let newProblemsSolved = currentProblemsSolved + 1;
+    let newTimeScore = currentTimeScore + timeIncrease;
+
+    return allActions([
+      set(`${pathToUser}/problemsSolved`, newProblemsSolved),
+      set(`${pathToUser}/timeScore`, newTimeScore)
+    ]);
+  }
+
+  export async function recordResult(request: Request, result: Result): Promise<void> {
     // Decode the uid from the token
     return decodeToken(request.submitterToken).then(token => {
       let uid = token.uid;
       let emailVerified = token.email_verified;
 
-      let userSubmission: UserSubmission = {
-        status: result.status,
-        submittedOn: request.submittedOn,
-        lang: request.lang
-      };
-      if (result.status === 'Pass') {
-        userSubmission.execTime = result.execTime;
-
-        if (emailVerified) {
-          let successfulSubmission: SuccessfulSubmission = {
-            execTime: result.execTime,
-            lang: request.lang,
-            submittedOn: request.submittedOn,
-            submitterUid: uid
-          };
-          // Record for the leaderboard (but only if they passed)
-          let leaderboardPromise = recordToLeaderboard(problemId, successfulSubmission);
-          leaderboardPromise.catch(err => console.error(`Failed to add to leaderboard: ${err}`));
-          actions.push(leaderboardPromise);
-        }
-      }
-
-      // Record for the user
-      let userRecording = recordForUser(uid, problemId, userSubmission);
-      userRecording.catch(err => console.error(`Failed to record user's submission: ${err}`));
-      actions.push(userRecording);
-
-      // Promise resolves when all actions finish
-      return new Promise<void>((resolve, reject) => {
-        // Mapping from void[] to void
-        Promise.all(actions).then(
-            () => resolve(),
-            err => reject(err));
-      });
+      return request.competition
+          ? recordCompetitionResult(uid, emailVerified, request, result)
+          : recordProblemResult(uid, emailVerified, request, result);
     });
   }
 
-  export function moveSuccessfulSubmissionsToLeaderboard(token: string): Promise<void> {
+  export async function moveSuccessfulSubmissionsToLeaderboard(token: string): Promise<void> {
     return decodeToken(token).then(user => {
       let uid = user.uid;
       database.ref(`/submissions/${uid}`).once('value', snapshot => {
@@ -126,7 +211,7 @@ export namespace Firebase {
     });
   }
 
-  function moveToLeaderboard(
+  async function moveToLeaderboard(
       problemId: string,
       uid: string,
       submission: UserSubmission): Promise<void> {
@@ -137,5 +222,14 @@ export namespace Firebase {
       submittedOn: submission.submittedOn
     };
     return database.ref(`successfulSubmissions/${problemId}`).push(successfulSubmission);
+  }
+
+  async function allActions(actions: Promise<void>[]): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      // Mapping from void[] to void
+      Promise.all(actions).then(
+          () => resolve(),
+          err => reject(err));
+    });
   }
 }
