@@ -54,6 +54,30 @@ export class ProblemDoesNotExistError implements Error {
   }
 }
 
+export class CompetitionDoesNotExistError implements Error {
+  error: string;
+
+  constructor(competitionId: string) {
+    this.error = `Competition "${competitionId}" does not exist.`;
+  }
+}
+
+export class CompetitionNotStartedError implements Error {
+  error: string;
+
+  constructor(competitionId: string) {
+    this.error = `Competition "${competitionId}" has not started.`;
+  }
+}
+
+export class CompetitionEndedError implements Error {
+  error: string;
+
+  constructor(competitionId: string) {
+    this.error = `Competition "${competitionId}" has ended.`;
+  }
+}
+
 export const UnexpectedError: Error = {
   error: 'The server ran into an unexpected error.'
 };
