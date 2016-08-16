@@ -141,6 +141,7 @@ async function handleRequest(request: Request, res: express.Response): Promise<v
     }
     res.status(HttpStatusCodes.Success).send(result);
   } catch (err) {
+    console.error('err: ' + err);
     res.status(HttpStatusCodes.BadRequest).send(err);
   }
 }
