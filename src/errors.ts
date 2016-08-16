@@ -78,10 +78,14 @@ export class CompetitionEndedError implements Error {
   }
 }
 
-export const UnexpectedError: Error = {
-  error: 'The server ran into an unexpected error.'
+export const InvalidTokenError: Error = {
+  error: 'Either the user token is missing or is invalid.'
 };
 
 export const NoTokenError: Error = {
-  error: 'You must include the token of the newly verified user.'
-}
+  error: 'You must include a user token.'
+};
+
+export const UnexpectedError: Error = {
+  error: 'The server ran into an unexpected error.'
+};

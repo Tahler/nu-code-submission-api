@@ -89,7 +89,7 @@ export namespace Firebase {
     return !!problem;
   }
 
-  async function decodeToken(token: string): Promise<any> {
+  export async function decodeToken(token: string): Promise<any> {
     return firebase.auth().verifyIdToken(token);
   }
 

@@ -7,6 +7,7 @@ import {
   CompetitionEndedError,
   CompetitionNotStartedError,
   InvalidRequestError,
+  InvalidTokenError,
   LanguageUnsupportedError,
   NoTokenError,
   ProblemDoesNotExistError
@@ -62,8 +63,8 @@ app.post('/api', jsonParser, (req, res) => {
 });
 
 /**
- * Throws error if any are found. Returns true if valid.
- * I hate this design.
+ * Throws the first found error. If none are found, returns true.
+ * Yeah, I hate this design too.
  */
 async function validateRequest(request: Request): Promise<boolean> {
   if (!Request.hasRequiredProperties(request)) {
@@ -82,6 +83,17 @@ async function validateRequest(request: Request): Promise<boolean> {
       throw new ProblemDoesNotExistError(problemId);
     }
   } else {
+    let userToken = request.submitterToken;
+    if (userToken === undefined) {
+      throw NoTokenError;
+    }
+
+    try {
+      await Firebase.decodeToken(userToken);
+    } catch (err) {
+      throw InvalidTokenError;
+    }
+
     let competitionExists = await Firebase.competitionExists(competitionId);
     if (!competitionExists) {
       throw new CompetitionDoesNotExistError(competitionId);
