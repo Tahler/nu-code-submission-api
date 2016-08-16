@@ -54,8 +54,39 @@ export namespace Firebase {
     });
   }
 
-  export async function set(path: string, value): Promise<void> {
+  export async function set(path: string, value: any): Promise<void> {
     return database.ref(path).set(value);
+  }
+
+  export async function problemExists(problemId: string): Promise<boolean> {
+    let problem = await getOrDefault(`/problems/${problemId}`, null);
+    return !!problem;
+  }
+
+  export async function competitionExists(competitionId: string): Promise<boolean> {
+    let competition = await getOrDefault(`/competitions/${competitionId}`, null);
+    return !!competition;
+  }
+
+  export async function competitionStartTimeBefore(
+      competitionId: string,
+      compareDateMilliseconds: number): Promise<boolean> {
+    let startTimeMilliseconds = await get(`/competitions/${competitionId}/startTime`);
+    return startTimeMilliseconds < compareDateMilliseconds;
+  }
+
+  export async function competitionEndTimeAfter(
+      competitionId: string,
+      compareDateMilliseconds: number): Promise<boolean> {
+    let endTimeMilliseconds = await get(`/competitions/${competitionId}/endTime`);
+    return endTimeMilliseconds < compareDateMilliseconds;
+  }
+
+  export async function competitionProblemExists(
+      competitionId: string,
+      problemId: string): Promise<boolean> {
+    let problem = await getOrDefault(`/competitionProblems/${competitionId}/${problemId}`, null);
+    return !!problem;
   }
 
   async function decodeToken(token: string): Promise<any> {
