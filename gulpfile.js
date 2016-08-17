@@ -65,7 +65,7 @@ gulp.task('build-api', ['build', 'copy-api-dockerfile'], shell.task(
 
 // Starts / restarts the api container
 gulp.task('start-api', ['build-api', 'stop-api'], shell.task(
-  'docker run -d --name api -p 8080:8080 -v /var/run/docker.sock:/var/run/docker.sock api'));
+  'docker run -d --name api -p 3006:80 -v /var/run/docker.sock:/var/run/docker.sock api'));
 
 // '2>/dev/null' ignores stderr
 // '|| true' "forces" a 0 exit code

@@ -18,7 +18,7 @@ import { Request } from './request';
 import { Runner } from './runner';
 import { langIsSupported } from './supported-languages';
 
-const Port = 8080;
+const Port = 80;
 
 let app = express();
 let jsonParser = bodyParser.json();
