@@ -15,3 +15,4 @@ When sending a JSON request, the `lang` property must match one of the codes bel
 | Python 2           | `python`  |
 | Python 3           | `python3` |
 | Rust               | `rust`    |
+| TypeScript         | `ts`      |

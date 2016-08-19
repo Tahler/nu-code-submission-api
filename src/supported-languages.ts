@@ -46,6 +46,11 @@ export const SupportedLanguages: SupportedLanguages = {
     compiler: 'rustc',
     filename: 'solution.rs',
     runtime: './solution'
+  },
+  ts: {
+    compiler: 'tsc',
+    filename: 'solution.ts',
+    runtime: 'nodejs solution.js'
   }
 };
 

@@ -57,6 +57,9 @@ RUN apt-get install -y golang
 # Rust
 RUN curl -sSf https://static.rust-lang.org/rustup.sh | sed -e 's/\bsudo\b//g' | sh
 
+# TypeScript
+RUN npm install -g typescript
+
 ################################################################################
 # Cleanup
 ################################################################################
