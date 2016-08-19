@@ -51,6 +51,9 @@ RUN apt-get install -y mono-runtime
 # C++ (Comes installed but kept for clarity)
 RUN apt-get install -y g++-5
 
+# Go
+RUN apt-get install -y golang
+
 ################################################################################
 # Cleanup
 ################################################################################

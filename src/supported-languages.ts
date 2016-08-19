@@ -20,6 +20,11 @@ export const SupportedLanguages: SupportedLanguages = {
     filename: 'solution.cs',
     runtime: 'mono solution.exe'
   },
+  go: {
+    compiler: 'go build',
+    filename: 'solution.go',
+    runtime: './solution'
+  },
   java: {
     compiler: 'javac',
     filename: 'Solution.java',

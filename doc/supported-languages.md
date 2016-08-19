@@ -9,6 +9,7 @@ When sending a JSON request, the `lang` property must match one of the codes bel
 | C                  | `c`       |
 | C++                | `cpp`     |
 | C#                 | `csharp`  |
+| Go                 | `go`      |
 | Java               | `java`    |
 | JavaScript         | `js`      |
 | Python 2           | `python`  |
