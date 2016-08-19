@@ -41,6 +41,11 @@ export const SupportedLanguages: SupportedLanguages = {
   python3: {
     filename: 'solution.py',
     runtime: 'python3.5 solution.py'
+  },
+  rust: {
+    compiler: 'rustc',
+    filename: 'solution.rs',
+    runtime: './solution'
   }
 };
 

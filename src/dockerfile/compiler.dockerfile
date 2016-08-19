@@ -54,6 +54,9 @@ RUN apt-get install -y g++-5
 # Go
 RUN apt-get install -y golang
 
+# Rust
+RUN curl -sSf https://static.rust-lang.org/rustup.sh | sed -e 's/\bsudo\b//g' | sh
+
 ################################################################################
 # Cleanup
 ################################################################################
