@@ -48,3 +48,43 @@ Start the API: `gulp start-api`
 Stop the API: `gulp stop-api`
 
 Look for the container's IP address: `docker inspect api`
+
+--------------------------------------------------------------------------------
+
+# Future
+
+## Languages
+
+- Swift
+- Scala
+- Clojure
+- Common Lisp
+- R
+- Haskell
+- Erlang
+- D
+- F#
+- PHP
+- Objective C
+- Ruby
+- Kotlin
+- Scheme
+- Perl
+- Fortran
+- Smalltalk
+- Lua
+- Tcl
+- Bash
+- Nim
+- Delphi
+- Elm
+
+## TODO:
+
+- [ ] Stress test with 50+ submissions to the same problem at the same time
+- [ ] Split into several, modular services
+  - [ ] Compilation service that only compiles and runs source code against tests
+    - This was actually in a previously tagged commit
+  - [ ] A "wrapper" API that uses the compilation service and Firebase to pull tests from problems and records results
+- [ ] Split compilers into separate docker containers
+  - As of right now
