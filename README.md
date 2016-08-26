@@ -1,6 +1,6 @@
-# NU Code API
+# Compilation Engine
 
-This is the compilation API for NU Code, my capstone project.
+This is the compilation API for [NU Code](http://code.neumont.edu/), my capstone project.
 
 Technologies:
 - [Node](https://nodejs.org/en/) / [TypeScript](https://www.typescriptlang.org/) / [Express](http://expressjs.com/) to define the API succinctly.
