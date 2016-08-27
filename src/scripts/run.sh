@@ -7,8 +7,7 @@
 #   1. The number of seconds before timing out.
 #		2. The command to execute the object code.
 #   3. The name of the input file to redirect into the program.
-#   4. The name of the output file that should hold the outputted
-#      results.
+#   4. The name of the output file that should hold the outputted results.
 #	Example Usage:
 #   ./run.sh 1 "./a.out" input.txt output.txt
 #   ./run.sh 3 "nodejs solution.js" input.txt output.txt
@@ -25,6 +24,7 @@ OUTPUT_FILE="$4"
 DATE_EXPRESSION="+%s.%N"
 START_TIME=$(date $DATE_EXPRESSION)
 
+# Redirect stdout to file
 # Redirect runtime errors to stdout
 output=$( (cat $INPUT_FILE | timeout "$SECONDS"s $COMMAND) \
   2>&1 \
