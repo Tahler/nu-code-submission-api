@@ -28,8 +28,8 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
   res.header(
-    'Access-Control-Allow-Headers',
-    'Content-Type, Authorization, Content-Length, X-Requested-With');
+      'Access-Control-Allow-Headers',
+      'Content-Type, Authorization, Content-Length, X-Requested-With');
   if ('OPTIONS' === req.method) {
     res.sendStatus(HttpStatusCodes.Success);
   } else {
@@ -125,16 +125,17 @@ async function handleRequest(request: Request, res: express.Response): Promise<v
     // This will throw errors if not valid.
     await validateRequest(request);
     // Retreve the needed info from Firebase
-    // Load the timeout and test cases asynchronously
-    let timeoutLocation = request.competition
-        ? `/competitionProblems/${request.competition}/${request.problem}/timeout`
-        : `/problems/${request.problem}/timeout`;
-    let [timeout, tests] = await Promise.all([
-      Firebase.get(timeoutLocation),
+    // Load showErrors, timeout, and test cases asynchronously
+    let problemLocation = request.competition
+        ? `/competitionProblems/${request.competition}/${request.problem}`
+        : `/problems/${request.problem}`;
+    let [showErrors, timeout, tests] = await Promise.all([
+      Firebase.get(`${problemLocation}/showErrors`),
+      Firebase.get(`${problemLocation}/timeout`),
       Firebase.get(`/tests/${request.problem}`)
     ]);
     // Ready to execute code
-    let runner = new Runner(request.lang, request.src, timeout, tests);
+    let runner = new Runner(request.lang, request.src, timeout, tests, showErrors);
     let result = await runner.run();
     if (request.submitterToken) {
       Firebase.recordResult(request, result);
