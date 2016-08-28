@@ -2,52 +2,52 @@
  * This file contains a single exported object which acts as a map.
  *
  * Each property creates another supported language.
- * Thus, to support a new language, adding to this file should be the only necessary step.
+ * Thus, to support a new language, adding to this object should be the only necessary step.
  */
 export const SupportedLanguages: SupportedLanguages = {
-  c: {
+  'c': {
     compiler: 'gcc',
     filename: 'solution.c',
     runtime: './a.out'
   },
-  cpp: {
+  'cpp': {
     compiler: 'g++',
     filename: 'solution.cpp',
     runtime: './a.out'
   },
-  csharp: {
+  'csharp': {
     compiler: 'mcs',
     filename: 'solution.cs',
     runtime: 'mono solution.exe'
   },
-  go: {
+  'go': {
     compiler: 'go build',
     filename: 'solution.go',
     runtime: './solution'
   },
-  java: {
+  'java': {
     compiler: 'javac',
     filename: 'Solution.java',
     runtime: 'java Solution'
   },
-  js: {
+  'js': {
     filename: 'solution.js',
     runtime: 'nodejs solution.js'
   },
-  python: {
+  'python': {
     filename: 'solution.py',
     runtime: 'python2.7 solution.py'
   },
-  python3: {
+  'python3': {
     filename: 'solution.py',
     runtime: 'python3.5 solution.py'
   },
-  rust: {
+  'rust': {
     compiler: 'rustc',
     filename: 'solution.rs',
     runtime: './solution'
   },
-  ts: {
+  'ts': {
     compiler: 'tsc',
     filename: 'solution.ts',
     runtime: 'nodejs solution.js'
