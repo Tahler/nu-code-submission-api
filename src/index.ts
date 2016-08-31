@@ -190,7 +190,9 @@ async function sendToApi(lang: string, src: string, tests: Test[], timeout: numb
       });
     });
     req.on('error', err => {
-      // TODO: more specific error handling. need to parse out 'EHOSTUNREACH' for host unreachable
+      if (err.code === 'EHOSTUNREACH') {
+        err = 'The Compilation API is unreachable!';
+      }
       reject({ code: HttpStatusCodes.ServerError, error: err});
     });
     req.write(JSON.stringify({ lang, src, tests, timeout }));
