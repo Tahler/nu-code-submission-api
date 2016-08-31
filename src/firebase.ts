@@ -2,7 +2,7 @@ import { Promise } from 'es6-promise';
 import * as firebase from 'firebase';
 
 import { FirebasePathDoesNotExistError } from './errors';
-import { Request } from './request';
+import { Submission } from './request';
 import { Result, SuccessfulSubmission, UserSubmission } from './results';
 
 // Relative to where Node is run from
@@ -106,7 +106,7 @@ export namespace Firebase {
   async function recordProblemResult(
       uid: string,
       emailVerified: boolean,
-      request: Request,
+      request: Submission,
       result: Result): Promise<void> {
     let actions: Promise<void>[] = [];
 
@@ -144,7 +144,7 @@ export namespace Firebase {
   async function recordCompetitionResult(
       uid: string,
       emailVerified: boolean,
-      request: Request,
+      request: Submission,
       result: Result): Promise<void> {
     let action: Promise<void>;
 
@@ -201,7 +201,7 @@ export namespace Firebase {
     ]);
   }
 
-  export async function recordResult(request: Request, result: Result): Promise<void> {
+  export async function recordResult(request: Submission, result: Result): Promise<void> {
     // Decode the uid from the token
     return decodeToken(request.submitterToken).then(token => {
       let uid = token.uid;

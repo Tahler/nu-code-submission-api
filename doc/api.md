@@ -27,7 +27,7 @@ Example request using cURL:
 
 ## Responses
 
-Responses are sent as JSON.
+Responses are sent as JSON. TODO: this documentation is outdated
 
 If the request was _incorrectly_ formatted, the JSON response will contain a single "error"
 property.

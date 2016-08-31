@@ -25,62 +25,23 @@ gulp.task('copy-credentials', function () {
     .pipe(gulp.dest('dist/credentials'));
 });
 
-gulp.task('copy-scripts', function () {
-  return gulp.src('src/scripts/*')
-    .pipe(gulp.dest('dist/scripts'));
-});
+gulp.task('copy-src-files', ['copy-package', 'copy-credentials']);
 
-gulp.task('copy-src-files', ['copy-package', 'copy-credentials', 'copy-scripts']);
-
-gulp.task('copy-api-dockerfile', function () {
-  return gulp.src('src/dockerfile/api.dockerfile')
+gulp.task('copy-dockerfile', function () {
+  return gulp.src('Dockerfile')
     .pipe(gulp.dest('dist'));
 });
 
-gulp.task('build', ['transpile', 'copy-src-files']);
-
-// Starts / restarts node
-var node;
-gulp.task('start-server', ['build'], function () {
-  if (node) {
-    node.kill();
-  }
-  process.chdir('dist');
-  node = spawn('node', ['./index.js'], {stdio: 'inherit'})
-  process.chdir('..');
-  node.on('close', function (code) {
-    if (code === 8) {
-      gulp.log('Error detected, waiting for changes...');
-    }
-  });
-});
-
-// Watches for file changes and restarts the node instance
-gulp.task('run', ['start-server'], function () {
-  gulp.watch('src/**/*', ['start-server']);
-});
-
-gulp.task('build-api', ['build', 'copy-api-dockerfile'], shell.task(
-  'docker build -t api -f ./dist/api.dockerfile ./dist'));
+gulp.task('build', ['transpile', 'copy-src-files', 'copy-dockerfile'], shell.task(
+  'docker build -t submission-api -f ./dist/Dockerfile ./dist'));
 
 // Starts / restarts the api container
-gulp.task('start-api', ['build-api', 'stop-api'], shell.task(
-  'docker run -d --name api -p 3006:80 -v /var/run/docker.sock:/var/run/docker.sock api'));
+gulp.task('start', ['build', 'stop'], shell.task(
+  'docker run -d --name submission-api -p 80:80 submission-api'));
 
 // '2>/dev/null' ignores stderr
 // '|| true' "forces" a 0 exit code
-gulp.task('stop-api', shell.task([
-  'docker kill api 2>/dev/null || true',
-  'docker rm api 2>/dev/null || true'
+gulp.task('stop', shell.task([
+  'docker kill submission-api 2>/dev/null || true',
+  'docker rm submission-api 2>/dev/null || true'
 ]));
-
-gulp.task('build-compiler', shell.task(
-  'docker build -t compiler -f ./src/dockerfile/compiler.dockerfile .'));
-
-gulp.task('default', ['run']);
-
-process.on('exit', function() {
-  if (node) {
-    node.kill();
-  }
-});

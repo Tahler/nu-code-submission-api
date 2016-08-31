@@ -4,16 +4,16 @@ export const RequiredProperties: string[] = [
   'problem'
 ];
 
-export interface Request {
+export interface Submission {
   lang: string;
   src: string;
-  submittedOn: number;
   problem: string;
+  submittedOn: number;
   competition?: string;
   submitterToken?: string;
 }
 
-export namespace Request {
+export namespace Submission {
   export function hasRequiredProperties(obj: any): boolean {
     let hasRequiredProperties = true;
     RequiredProperties.forEach(requiredProperty => {

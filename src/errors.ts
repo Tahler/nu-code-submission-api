@@ -4,16 +4,6 @@ interface Error {
   error: string;
 }
 
-export class LanguageUnsupportedError implements Error {
-  error: string;
-
-  constructor(requestedLang: string) {
-    this.error = `Language ${requestedLang} is not supported.`
-        + ` See a list of supported compilers here:`
-        + ` https://github.com/Tahler/capstone-api/blob/master/supported-languages.md`;
-  }
-}
-
 export class InvalidRequestError implements Error {
   error: string;
 

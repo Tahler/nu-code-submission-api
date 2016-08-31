@@ -1,26 +1,25 @@
 {
-  "name": "nu-code",
+  "name": "nu-code-submission-api",
   "version": "1.0.0",
-  "description": "The compilation API for NU Code, my capstone project.",
+  "description": "The submission API for NU Code, my capstone project.",
   "scripts": {
     "postinstall": "typings install"
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com:Tahler/capstone-api.git"
+    "url": "git+ssh://git@github.com:Tahler/submission-api.git"
   },
   "author": "Tyler Berry",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Tahler/capstone-api/issues"
+    "url": "https://github.com/Tahler/submission-api/issues"
   },
-  "homepage": "https://github.com/Tahler/capstone-api/blob/master/README.md",
+  "homepage": "https://github.com/Tahler/submission-api/blob/master/README.md",
   "dependencies": {
     "body-parser": "^1.15.1",
     "es6-promise": "^3.2.1",
     "express": "^4.13.4",
-    "firebase": "^3.2.0",
-    "tmp": "0.0.28"
+    "firebase": "^3.2.0"
   },
   "devDependencies": {
     "gulp": "^3.9.1",
