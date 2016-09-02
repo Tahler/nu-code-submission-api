@@ -2,6 +2,9 @@
 
 This is the Submission API for [NU Code](http://code.neumont.edu/), my capstone project.
 
+To see how this service fits into the application, see
+[the dispatch service](https://github.com/Tahler/nu-code-dispatch).
+
 ## Interface
 
 For details on how to send requests and what responses to expect, read
