@@ -1,5 +1,5 @@
-import { Promise } from 'es6-promise';
 import * as firebase from 'firebase';
+import * as admin from 'firebase-admin';
 
 import { FirebasePathDoesNotExistError } from './errors';
 import { Submission } from './request';
@@ -10,15 +10,15 @@ const ServiceCredentialsPath = './credentials/server-credentials.json';
 const DatabaseUrl = 'https://nu-code-350ea.firebaseio.com';
 const ServiceUid = 'compilation-api';
 
-firebase.initializeApp({
+admin.initializeApp({
   databaseAuthVariableOverride: {
     uid: ServiceUid
   },
-  databaseURL: DatabaseUrl,
-  serviceAccount: ServiceCredentialsPath
+  credential: admin.credential.cert(ServiceCredentialsPath),
+  databaseURL: DatabaseUrl
 });
 
-let database = firebase.database();
+let database = admin.database();
 
 export namespace Firebase {
   export async function get(path: string): Promise<any> {

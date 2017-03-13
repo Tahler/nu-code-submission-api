@@ -1,5 +1,4 @@
 import * as bodyParser from 'body-parser';
-import { Promise } from 'es6-promise';
 import * as express from 'express';
 import * as http from 'http';
 
